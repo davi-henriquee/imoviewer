@@ -253,7 +253,7 @@ function scoreCopy(score) {
 }
 
 function scoreCategory(score) {
-  const safeScore = clamp(Number(score) || 0, 0, 100);
+  const safeScore = clamp(Math.round(Number(score) || 0), 0, 100);
   return SCORE_CATEGORIES.find((category) => safeScore >= category.min) || SCORE_CATEGORIES.at(-1);
 }
 
@@ -284,7 +284,7 @@ function updateLiveScore() {
     return;
   }
 
-  const finalScore = roundScore(calculation.finalScore);
+  const finalScore = Math.round(calculation.finalScore);
   const [title, message] = scoreCopy(finalScore);
   const color = scoreColor(finalScore);
   liveScore.textContent = decimalFormatter.format(finalScore);
@@ -307,6 +307,7 @@ function loadProperties() {
             extras: Array.isArray(property.extras) ? property.extras : [],
             photo: typeof property.photo === "string" ? property.photo : "",
             contact: typeof property.contact === "string" ? property.contact : "",
+            score: Math.round(Number(property.score) || 0),
           }))
       : [];
   } catch (error) {
@@ -341,7 +342,7 @@ function createPropertyCard(property) {
   const image = card.querySelector(".property-image");
   const fallback = card.querySelector(".property-image-fallback");
   const cardScore = card.querySelector(".card-score");
-  const roundedScore = roundScore(property.score);
+  const roundedScore = Math.round(Number(property.score) || 0);
 
   card.tabIndex = 0;
   card.title = "Clique para ver os detalhes da nota";
@@ -424,7 +425,7 @@ function createPropertyCard(property) {
 
 function openPropertyOverview(property) {
   const calculation = calculateScore(property);
-  const roundedScore = roundScore(calculation.finalScore ?? property.score);
+  const roundedScore = Math.round(calculation.finalScore ?? property.score);
   const category = scoreCategory(roundedScore);
   const color = scoreColor(roundedScore);
 
@@ -795,7 +796,7 @@ function createPropertyRecord(data, photo = "") {
     contact: data.contact || "",
     extras: data.extras,
     photo,
-    score: roundScore(calculation.finalScore),
+    score: Math.round(calculation.finalScore),
     scoreDetails: {
       value: roundScore(calculation.valueScore),
       condo: roundScore(calculation.condoScore),
