@@ -804,17 +804,17 @@ textarea {
   transition: border-color 160ms ease, box-shadow 160ms ease;
 }
 
-.contact-field {
+.website-field {
   margin-top: 20px;
 }
 
-.contact-field > span:first-child small {
+.website-field > span:first-child small {
   color: #74899c;
   font-size: 0.75rem;
   font-weight: 550;
 }
 
-.contact-input {
+.website-input {
   display: flex;
   min-height: 50px;
   align-items: center;
@@ -825,18 +825,18 @@ textarea {
   transition: border-color 160ms ease, box-shadow 160ms ease;
 }
 
-.contact-input:focus-within {
+.website-input:focus-within {
   border-color: var(--accent);
   box-shadow: 0 0 0 4px rgba(15, 118, 110, 0.11);
 }
 
-.contact-input svg {
+.website-input svg {
   width: 18px;
   margin-left: 15px;
   fill: var(--accent);
 }
 
-.contact-input input {
+.website-input input {
   width: 100%;
   min-width: 0;
   height: 48px;
@@ -1416,33 +1416,33 @@ textarea {
   gap: 7px;
 }
 
-.whatsapp-link {
+.web-link {
   display: inline-flex;
   min-height: 31px;
   align-items: center;
   gap: 5px;
   padding: 6px 9px;
   border-radius: 9px;
-  color: #087b50;
-  background: #e7f8ef;
+  color: var(--accent-dark);
+  background: #eaf7f5;
   font-size: 0.7rem;
   font-weight: 760;
   text-decoration: none;
   transition: color 160ms ease, background 160ms ease, transform 160ms ease;
 }
 
-.whatsapp-link:hover {
-  color: #05613f;
-  background: #d6f3e4;
+.web-link:hover {
+  color: var(--accent);
+  background: #d9efed;
   transform: translateY(-1px);
 }
 
-.whatsapp-link svg {
+.web-link svg {
   width: 15px;
   fill: currentColor;
 }
 
-.whatsapp-link[hidden] {
+.web-link[hidden] {
   display: none;
 }
 
@@ -1909,7 +1909,7 @@ textarea {
     font-size: 0;
   }
 
-  .whatsapp-link {
+  .web-link {
     width: 31px;
     justify-content: center;
     padding: 6px;
