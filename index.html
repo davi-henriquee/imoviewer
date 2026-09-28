@@ -66,24 +66,30 @@
           <span>Importar</span>
         </button>
         <input id="importInput" type="file" accept=".json,application/json" hidden />
-        <a class="saved-count" href="#lista-imoveis">
-          <span id="savedCount">0</span>
-          <span id="savedCountLabel">imóveis salvos</span>
+        <a
+          class="saved-count"
+          id="savedPropertiesLink"
+          href="#lista-imoveis"
+          aria-label="Ver imóveis cadastrados"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="m3 11 9-8 9 8v10h-6v-6H9v6H3V11Zm2 1v7h2v-6h10v6h2v-7l-7-6.2L5 12Z" />
+          </svg>
         </a>
       </div>
     </header>
 
     <main id="inicio" class="page-shell">
-      <section class="workspace" aria-labelledby="pageTitle">
-        <div class="intro-row">
-          <h1 id="pageTitle">Encontre o imóvel que mais combina com você.</h1>
-        </div>
-
+      <section class="workspace" aria-label="Cadastro de imóveis">
         <div class="form-layout">
           <form id="propertyForm" class="property-form" novalidate>
             <div class="form-section form-section-main">
               <div class="section-heading">
-                <span class="section-number">01</span>
+                <span class="section-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24">
+                    <path d="M4 5h16v14H4V5Zm2 2v10h12V7H6Zm2 2h5v2H8V9Zm0 4h8v2H8v-2Zm7-4h1v2h-1V9Z" />
+                  </svg>
+                </span>
                 <div>
                   <h2>Informações principais</h2>
                 </div>
@@ -153,7 +159,11 @@
 
             <div class="form-section">
               <div class="section-heading">
-                <span class="section-number">02</span>
+                <span class="section-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24">
+                    <path d="M4 7h9v2H4V7Zm13 0h3v2h-3V7Zm-2-2h2v6h-2V5ZM4 15h3v2H4v-2Zm7 0h9v2h-9v-2Zm-4-2h2v6H7v-6Z" />
+                  </svg>
+                </span>
                 <div>
                   <h2>Características</h2>
                 </div>
@@ -249,7 +259,11 @@
 
             <div class="form-section">
               <div class="section-heading">
-                <span class="section-number">03</span>
+                <span class="section-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24">
+                    <path d="M5 3h10l4 4v14H5V3Zm2 2v14h10V8h-3V5H7Zm2 6h6v2H9v-2Zm0 4h6v2H9v-2Z" />
+                  </svg>
+                </span>
                 <div>
                   <h2>Detalhes do imóvel</h2>
                 </div>
@@ -310,9 +324,7 @@
                 <small>/100</small>
               </div>
               <h2 id="scoreTitle">Preencha os valores</h2>
-              <p id="scoreMessage">
-                Informe valor, condomínio e tamanho para ver a pontuação.
-              </p>
+              <p id="scoreMessage" hidden></p>
 
               <div class="score-breakdown" id="scoreBreakdown" aria-label="Detalhamento da nota">
                 <div>

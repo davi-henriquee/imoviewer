@@ -4,6 +4,7 @@ const STORAGE_KEY = "meu-proximo-imovel:v1";
 const ACCESS_SESSION_KEY = "imoviewer:access-granted";
 const ACCESS_PASSWORD = "2007";
 const BACKUP_FORMAT = "imoviewer-backup";
+const BACKUP_FILE_NAME = "imoviewer.json";
 const SCORE_CATEGORY_COUNT = 6;
 
 const loginScreen = document.querySelector("#loginScreen");
@@ -26,8 +27,7 @@ const formError = document.querySelector("#formError");
 const list = document.querySelector("#propertyList");
 const emptyState = document.querySelector("#emptyState");
 const cardTemplate = document.querySelector("#propertyCardTemplate");
-const savedCount = document.querySelector("#savedCount");
-const savedCountLabel = document.querySelector("#savedCountLabel");
+const savedPropertiesLink = document.querySelector("#savedPropertiesLink");
 const exportButton = document.querySelector("#exportButton");
 const importButton = document.querySelector("#importButton");
 const importInput = document.querySelector("#importInput");
@@ -197,7 +197,8 @@ function updateLiveScore() {
   if (!calculation.complete) {
     liveScore.textContent = "—";
     scoreTitle.textContent = "Preencha os valores";
-    scoreMessage.textContent = "Informe valor, condomínio e tamanho para ver a pontuação.";
+    scoreMessage.textContent = "";
+    scoreMessage.hidden = true;
     scorePanel.style.setProperty("--score-color", "#64748b");
     scoreOrb.style.setProperty("--score-progress", "0%");
     return;
@@ -209,6 +210,7 @@ function updateLiveScore() {
   liveScore.textContent = decimalFormatter.format(finalScore);
   scoreTitle.textContent = title;
   scoreMessage.textContent = message;
+  scoreMessage.hidden = false;
   scorePanel.style.setProperty("--score-color", color);
   scoreOrb.style.setProperty("--score-progress", `${finalScore}%`);
 }
@@ -260,8 +262,12 @@ function buildDetailTags(property) {
 function renderProperties() {
   list.replaceChildren();
   emptyState.hidden = properties.length > 0;
-  savedCount.textContent = String(properties.length);
-  savedCountLabel.textContent = properties.length === 1 ? "imóvel salvo" : "imóveis salvos";
+  savedPropertiesLink.setAttribute(
+    "aria-label",
+    properties.length === 1
+      ? "Ver 1 imóvel cadastrado"
+      : `Ver ${properties.length} imóveis cadastrados`,
+  );
 
   const fragment = document.createDocumentFragment();
 
@@ -474,6 +480,24 @@ function sanitizeBackupProperty(item, index) {
   return property;
 }
 
+function mergeImportedProperties(importedProperties) {
+  const previousProperties = properties;
+  const byId = new Map(properties.map((property) => [property.id, property]));
+  importedProperties.forEach((property) => byId.set(property.id, property));
+  properties = Array.from(byId.values()).sort(
+    (left, right) => Date.parse(right.createdAt) - Date.parse(left.createdAt),
+  );
+
+  try {
+    persistProperties();
+  } catch (storageError) {
+    properties = previousProperties;
+    throw new Error("Não há espaço suficiente no navegador para carregar estes imóveis.");
+  }
+
+  renderProperties();
+}
+
 function exportBackup() {
   const backup = {
     format: BACKUP_FORMAT,
@@ -485,7 +509,7 @@ function exportBackup() {
   const downloadUrl = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = downloadUrl;
-  link.download = `imoviewer-backup-${new Date().toISOString().slice(0, 10)}.json`;
+  link.download = BACKUP_FILE_NAME;
   document.body.append(link);
   link.click();
   link.remove();
@@ -504,21 +528,7 @@ async function importBackup(event) {
     }
 
     const importedProperties = parsed.properties.map(sanitizeBackupProperty);
-    const previousProperties = properties;
-    const byId = new Map(properties.map((property) => [property.id, property]));
-    importedProperties.forEach((property) => byId.set(property.id, property));
-    properties = Array.from(byId.values()).sort(
-      (left, right) => Date.parse(right.createdAt) - Date.parse(left.createdAt),
-    );
-
-    try {
-      persistProperties();
-    } catch (storageError) {
-      properties = previousProperties;
-      throw new Error("Não há espaço suficiente no navegador para importar este backup.");
-    }
-
-    renderProperties();
+    mergeImportedProperties(importedProperties);
     showToast(
       `${importedProperties.length} ${
         importedProperties.length === 1 ? "imóvel importado" : "imóveis importados"
@@ -528,6 +538,24 @@ async function importBackup(event) {
     showToast(error instanceof Error ? error.message : "Não foi possível importar o backup.");
   } finally {
     importInput.value = "";
+  }
+}
+
+async function loadBundledBackup() {
+  try {
+    const response = await fetch(`./${BACKUP_FILE_NAME}`, { cache: "no-store" });
+    if (!response.ok) throw new Error(`Resposta ${response.status}`);
+    const parsed = await response.json();
+    if (parsed?.format !== BACKUP_FORMAT || !Array.isArray(parsed.properties)) {
+      throw new Error("Formato inválido");
+    }
+
+    const bundledProperties = parsed.properties.map(sanitizeBackupProperty);
+    if (bundledProperties.length > 0) mergeImportedProperties(bundledProperties);
+  } catch (error) {
+    if (window.location.protocol !== "file:") {
+      console.warn(`Não foi possível carregar ${BACKUP_FILE_NAME}.`, error);
+    }
   }
 }
 
@@ -733,3 +761,4 @@ photoInput.addEventListener("change", () => {
 renderProperties();
 updateLiveScore();
 initializeAccess();
+void loadBundledBackup();
