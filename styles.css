@@ -942,6 +942,15 @@ textarea {
   line-height: 1.45;
 }
 
+.form-actions {
+  display: grid;
+  gap: 10px;
+}
+
+.property-form.is-editing .form-actions {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
 .save-button {
   display: flex;
   width: 100%;
@@ -978,6 +987,28 @@ textarea {
 .save-button svg {
   width: 20px;
   fill: currentColor;
+}
+
+.cancel-edit-button {
+  min-height: 58px;
+  padding: 0 22px;
+  border: 1px solid var(--line-strong);
+  border-radius: 16px;
+  color: var(--ink-soft);
+  background: #fff;
+  cursor: pointer;
+  font-weight: 750;
+  transition: border-color 160ms ease, color 160ms ease, background 160ms ease;
+}
+
+.cancel-edit-button:hover {
+  border-color: #93aaa9;
+  color: var(--ink);
+  background: #f8fafc;
+}
+
+.cancel-edit-button[hidden] {
+  display: none;
 }
 
 .score-panel {
@@ -1352,6 +1383,7 @@ textarea {
   display: none;
 }
 
+.edit-button,
 .delete-button {
   display: inline-flex;
   align-items: center;
@@ -1365,10 +1397,19 @@ textarea {
   font-weight: 650;
 }
 
+.edit-button {
+  color: var(--accent-dark);
+}
+
+.edit-button:hover {
+  color: var(--accent);
+}
+
 .delete-button:hover {
   color: var(--danger);
 }
 
+.edit-button svg,
 .delete-button svg {
   width: 15px;
   fill: currentColor;
@@ -1602,6 +1643,19 @@ textarea {
 
   .card-actions {
     margin-left: auto;
+  }
+
+  .property-form.is-editing .form-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .edit-button,
+  .delete-button {
+    width: 31px;
+    min-height: 31px;
+    justify-content: center;
+    margin-left: 0;
+    font-size: 0;
   }
 
   .whatsapp-link {

@@ -367,12 +367,17 @@
 
             <p class="form-error" id="formError" role="alert" hidden></p>
 
-            <button class="save-button" id="saveButton" type="submit">
-              <span>Salvar imóvel</span>
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path d="m13.2 5.2 6.8 6.8-6.8 6.8-1.4-1.4 4.4-4.4H4v-2h12.2l-4.4-4.4Z" />
-              </svg>
-            </button>
+            <div class="form-actions">
+              <button class="save-button" id="saveButton" type="submit">
+                <span>Salvar imóvel</span>
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="m13.2 5.2 6.8 6.8-6.8 6.8-1.4-1.4 4.4-4.4H4v-2h12.2l-4.4-4.4Z" />
+                </svg>
+              </button>
+              <button class="cancel-edit-button" id="cancelEditButton" type="button" hidden>
+                Cancelar edição
+              </button>
+            </div>
           </form>
 
           <aside class="score-panel" aria-labelledby="scoreTitle">
@@ -467,6 +472,12 @@
                 </svg>
                 WhatsApp
               </a>
+              <button class="edit-button" type="button" aria-label="Editar imóvel">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M4 15.5V20h4.5L19.8 8.7l-4.5-4.5L4 15.5Zm3.7 2.5H6v-1.7l9.3-9.2 1.6 1.6L7.7 18ZM21.2 5.9a1 1 0 0 0 0-1.4l-1.7-1.7a1 1 0 0 0-1.4 0l-1.4 1.4 4.5 4.5 1.4-1.4-1.4-1.4Z" />
+                </svg>
+                Editar
+              </button>
               <button class="delete-button" type="button" aria-label="Excluir imóvel">
                 <svg viewBox="0 0 24 24" aria-hidden="true">
                   <path d="M7 21a2 2 0 0 1-2-2V6h14v13a2 2 0 0 1-2 2H7ZM4 6V4h5V3h6v1h5v2H4Zm3 2v11h10V8H7Zm2 9h2V10H9v7Zm4 0h2V10h-2v7Z" />

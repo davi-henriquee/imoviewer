@@ -43,6 +43,7 @@ const photoPreview = document.querySelector("#photoPreview");
 const photoPlaceholder = document.querySelector("#photoPlaceholder");
 const changePhoto = document.querySelector("#changePhoto");
 const saveButton = document.querySelector("#saveButton");
+const cancelEditButton = document.querySelector("#cancelEditButton");
 const formError = document.querySelector("#formError");
 const list = document.querySelector("#propertyList");
 const emptyState = document.querySelector("#emptyState");
@@ -83,6 +84,8 @@ let properties = loadProperties();
 let previewUrl = "";
 let toastTimer = 0;
 let webMcpRegistered = false;
+let editingPropertyId = "";
+let editingPhoto = "";
 
 function clamp(value, min, max) {
   return Math.min(Math.max(value, min), max);
@@ -371,12 +374,17 @@ function renderProperties() {
       detailsContainer.append(tag);
     });
 
+    card.querySelector(".edit-button").addEventListener("click", () => {
+      startEditing(property);
+    });
+
     card.querySelector(".delete-button").addEventListener("click", () => {
       const confirmed = window.confirm("Excluir este imóvel da lista?");
       if (!confirmed) return;
       properties = properties.filter((item) => item.id !== property.id);
       try {
         persistProperties();
+        if (editingPropertyId === property.id) resetForm();
         renderProperties();
         showToast("Imóvel excluído.");
       } catch (error) {
@@ -444,6 +452,11 @@ function resetPhotoPreview() {
 }
 
 function resetForm() {
+  editingPropertyId = "";
+  editingPhoto = "";
+  form.classList.remove("is-editing");
+  cancelEditButton.hidden = true;
+  saveButton.querySelector("span").textContent = "Salvar imóvel";
   form.reset();
   form.elements.location.value = "2";
   form.elements.furniture.value = "0";
@@ -452,6 +465,43 @@ function resetForm() {
   resetPhotoPreview();
   updateSliders();
   updateLiveScore();
+}
+
+function startEditing(property) {
+  editingPropertyId = property.id;
+  editingPhoto = typeof property.photo === "string" ? property.photo : "";
+
+  propertyValueInput.value = String(property.propertyValue);
+  condoValueInput.value = String(property.condoValue);
+  propertySizeInput.value = String(property.propertySize);
+  waterIncludedInput.checked = Boolean(property.waterIncluded);
+  locationSlider.value = String(Math.max(0, LOCATION_SCORES.indexOf(property.location)));
+  furnitureSlider.value = String(Math.max(0, FURNITURE_SCORES.indexOf(property.furniture)));
+  form.elements.garage.value = String(property.garage);
+  form.elements.barbecue.checked = property.extras.includes("Churrasqueira");
+  form.elements.balcony.checked = property.extras.includes("Sacada");
+  form.elements.elevator.checked = property.extras.includes("Elevador");
+  descriptionInput.value = property.description;
+  contactInput.value = property.contact || "";
+  photoInput.value = "";
+
+  resetPhotoPreview();
+  if (editingPhoto.startsWith("data:image/")) {
+    photoPreview.src = editingPhoto;
+    photoPreview.hidden = false;
+    photoPlaceholder.hidden = true;
+    changePhoto.hidden = false;
+  }
+
+  form.classList.add("is-editing");
+  cancelEditButton.hidden = false;
+  saveButton.querySelector("span").textContent = "Atualizar imóvel";
+  descriptionCount.textContent = String(descriptionInput.value.length);
+  showError("");
+  updateSliders();
+  updateLiveScore();
+  form.scrollIntoView({ behavior: "smooth", block: "start" });
+  window.setTimeout(() => propertyValueInput.focus(), 350);
 }
 
 function showError(message) {
@@ -666,18 +716,31 @@ async function handleSubmit(event) {
   }
 
   saveButton.disabled = true;
-  saveButton.querySelector("span").textContent = "Salvando...";
+  const isEditing = Boolean(editingPropertyId);
+  saveButton.querySelector("span").textContent = isEditing ? "Atualizando..." : "Salvando...";
 
   try {
     const photoFile = photoInput.files?.[0];
-    const photo = photoFile ? await fileToOptimizedDataUrl(photoFile) : "";
+    const photo = photoFile ? await fileToOptimizedDataUrl(photoFile) : editingPhoto;
     const property = createPropertyRecord(data, photo);
-    properties.unshift(property);
+    const previousProperties = properties;
+
+    if (isEditing) {
+      const propertyIndex = properties.findIndex((item) => item.id === editingPropertyId);
+      if (propertyIndex === -1) throw new Error("Este imóvel não está mais disponível para edição.");
+      const originalProperty = properties[propertyIndex];
+      property.id = originalProperty.id;
+      property.createdAt = originalProperty.createdAt;
+      property.updatedAt = new Date().toISOString();
+      properties = properties.map((item, index) => (index === propertyIndex ? property : item));
+    } else {
+      properties = [property, ...properties];
+    }
 
     try {
       persistProperties();
     } catch (storageError) {
-      properties.shift();
+      properties = previousProperties;
       throw new Error(
         "O navegador ficou sem espaço para salvar. Tente uma foto menor ou exclua um imóvel antigo.",
       );
@@ -685,13 +748,17 @@ async function handleSubmit(event) {
 
     renderProperties();
     resetForm();
-    showToast(`Imóvel salvo com nota ${decimalFormatter.format(property.score)}.`);
+    showToast(
+      `Imóvel ${isEditing ? "atualizado" : "salvo"} com nota ${decimalFormatter.format(property.score)}.`,
+    );
     document.querySelector("#lista-imoveis").scrollIntoView({ behavior: "smooth", block: "start" });
   } catch (error) {
     showError(error instanceof Error ? error.message : "Não foi possível salvar o imóvel.");
   } finally {
     saveButton.disabled = false;
-    saveButton.querySelector("span").textContent = "Salvar imóvel";
+    saveButton.querySelector("span").textContent = editingPropertyId
+      ? "Atualizar imóvel"
+      : "Salvar imóvel";
   }
 }
 
@@ -811,6 +878,11 @@ form.addEventListener("input", () => {
 
 form.addEventListener("change", updateLiveScore);
 form.addEventListener("submit", handleSubmit);
+cancelEditButton.addEventListener("click", () => {
+  resetForm();
+  showError("");
+  showToast("Edição cancelada.");
+});
 document.querySelectorAll("[data-slider]").forEach((option) => {
   option.addEventListener("click", () => {
     const slider = document.getElementById(option.dataset.slider);
