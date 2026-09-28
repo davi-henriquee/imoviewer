@@ -21,6 +21,14 @@ const FURNITURE_LABELS = [
   "Bem mobiliado",
   "Completamente mobiliado",
 ];
+const SCORE_CATEGORIES = [
+  { key: "best", min: 91, range: "91–100", label: "Os melhores" },
+  { key: "excellent", min: 81, range: "81–90", label: "Excelente opção" },
+  { key: "good", min: 71, range: "71–80", label: "Boa opção" },
+  { key: "observe", min: 61, range: "61–70", label: "Vale observação" },
+  { key: "bad", min: 51, range: "51–60", label: "Opção ruim" },
+  { key: "terrible", min: 0, range: "0–50", label: "Péssima opção" },
+];
 
 const loginScreen = document.querySelector("#loginScreen");
 const loginForm = document.querySelector("#loginForm");
@@ -58,6 +66,24 @@ const scoreOrb = document.querySelector("#scoreOrb");
 const liveScore = document.querySelector("#liveScore");
 const scoreTitle = document.querySelector("#scoreTitle");
 const scoreMessage = document.querySelector("#scoreMessage");
+const overviewDialog = document.querySelector("#propertyOverviewDialog");
+const overviewCloseButton = document.querySelector("#overviewCloseButton");
+const overviewScoreOrb = document.querySelector("#overviewScoreOrb");
+const overviewScore = document.querySelector("#overviewScore");
+const overviewTitle = document.querySelector("#overviewTitle");
+const overviewRange = document.querySelector("#overviewRange");
+const overviewDescription = document.querySelector("#overviewDescription");
+const overviewPrice = document.querySelector("#overviewPrice");
+
+const overviewPointsElements = {
+  value: document.querySelector("#overviewValuePoints"),
+  condo: document.querySelector("#overviewCondoPoints"),
+  size: document.querySelector("#overviewSizePoints"),
+  location: document.querySelector("#overviewLocationPoints"),
+  furniture: document.querySelector("#overviewFurniturePoints"),
+  garage: document.querySelector("#overviewGaragePoints"),
+  bonus: document.querySelector("#overviewBonusPoints"),
+};
 
 const pointsElements = {
   value: document.querySelector("#valuePoints"),
@@ -214,19 +240,21 @@ function scoreColor(score) {
 }
 
 function scoreCopy(score) {
-  if (score >= 85) {
-    return ["Excelente opção", "A combinação de custo, espaço e características está muito forte."];
-  }
-  if (score >= 70) {
-    return ["Boa opção", "Este imóvel tem um equilíbrio interessante para sua busca."];
-  }
-  if (score >= 50) {
-    return ["Vale analisar", "Há bons pontos, mas alguns critérios reduzem a nota final."];
-  }
-  if (score >= 30) {
-    return ["Abaixo do ideal", "Compare com cuidado antes de colocar este imóvel entre os favoritos."];
-  }
-  return ["Pouco competitivo", "Os critérios atuais deixam este imóvel distante do cenário ideal."];
+  const category = scoreCategory(score);
+  const messages = {
+    best: "Este imóvel reúne a combinação mais forte entre os critérios avaliados.",
+    excellent: "A combinação de custo, espaço e características está muito forte.",
+    good: "Este imóvel tem um equilíbrio interessante para sua busca.",
+    observe: "Há bons pontos, mas alguns critérios merecem uma análise mais cuidadosa.",
+    bad: "Alguns critérios importantes reduzem bastante a nota final.",
+    terrible: "Os critérios atuais deixam este imóvel distante do cenário ideal.",
+  };
+  return [category.label, messages[category.key]];
+}
+
+function scoreCategory(score) {
+  const safeScore = clamp(Number(score) || 0, 0, 100);
+  return SCORE_CATEGORIES.find((category) => safeScore >= category.min) || SCORE_CATEGORIES.at(-1);
 }
 
 function formatPoints(value) {
@@ -292,11 +320,7 @@ function persistProperties() {
 }
 
 function labelForScore(score) {
-  if (score >= 85) return "Excelente opção";
-  if (score >= 70) return "Boa opção";
-  if (score >= 50) return "Vale analisar";
-  if (score >= 30) return "Abaixo do ideal";
-  return "Pouco competitivo";
+  return scoreCategory(score).label;
 }
 
 function buildDetailTags(property) {
@@ -312,6 +336,129 @@ function buildDetailTags(property) {
   return details;
 }
 
+function createPropertyCard(property) {
+  const card = cardTemplate.content.firstElementChild.cloneNode(true);
+  const image = card.querySelector(".property-image");
+  const fallback = card.querySelector(".property-image-fallback");
+  const cardScore = card.querySelector(".card-score");
+  const roundedScore = roundScore(property.score);
+
+  card.tabIndex = 0;
+  card.title = "Clique para ver os detalhes da nota";
+  card.setAttribute("aria-label", `Ver detalhes da nota: ${property.description}`);
+
+  image.hidden = true;
+  fallback.hidden = false;
+
+  if (typeof property.photo === "string" && property.photo.startsWith("data:image/")) {
+    image.alt = `Foto do imóvel: ${property.description}`;
+    image.onload = () => {
+      image.hidden = false;
+      fallback.hidden = true;
+    };
+    image.onerror = () => {
+      image.hidden = true;
+      fallback.hidden = false;
+    };
+    image.src = property.photo;
+  }
+
+  cardScore.style.setProperty("--card-score-color", scoreColor(roundedScore));
+  cardScore.querySelector("strong").textContent = decimalFormatter.format(roundedScore);
+  card.querySelector(".property-meta").textContent = `${decimalFormatter.format(property.propertySize)} m²`;
+  card.querySelector(".property-price").textContent = currencyFormatter.format(property.propertyValue);
+  card.querySelector(".property-description").textContent = property.description;
+  card.querySelector(".score-label").textContent = labelForScore(roundedScore);
+
+  const whatsappLink = card.querySelector(".whatsapp-link");
+  const whatsappNumber = normalizePhoneDigits(property.contact);
+  if (whatsappNumber) {
+    const message = `Olá! Tenho interesse neste imóvel: ${property.description.slice(0, 120)}`;
+    whatsappLink.href = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
+    whatsappLink.setAttribute(
+      "aria-label",
+      `Abrir conversa no WhatsApp com a imobiliária: ${property.contact}`,
+    );
+    whatsappLink.title = property.contact;
+    whatsappLink.hidden = false;
+  }
+
+  const detailsContainer = card.querySelector(".property-details");
+  buildDetailTags(property).forEach((detail) => {
+    const tag = document.createElement("span");
+    tag.textContent = detail;
+    detailsContainer.append(tag);
+  });
+
+  card.querySelector(".edit-button").addEventListener("click", () => {
+    startEditing(property);
+  });
+
+  card.querySelector(".delete-button").addEventListener("click", () => {
+    const confirmed = window.confirm("Excluir este imóvel da lista?");
+    if (!confirmed) return;
+    properties = properties.filter((item) => item.id !== property.id);
+    try {
+      persistProperties();
+      if (editingPropertyId === property.id) resetForm();
+      renderProperties();
+      showToast("Imóvel excluído.");
+    } catch (error) {
+      showToast("Não foi possível excluir o imóvel.");
+    }
+  });
+
+  card.addEventListener("click", (event) => {
+    if (event.target.closest("a, button")) return;
+    openPropertyOverview(property);
+  });
+
+  card.addEventListener("keydown", (event) => {
+    if (event.target !== card || !["Enter", " "].includes(event.key)) return;
+    event.preventDefault();
+    openPropertyOverview(property);
+  });
+
+  return card;
+}
+
+function openPropertyOverview(property) {
+  const calculation = calculateScore(property);
+  const roundedScore = roundScore(calculation.finalScore ?? property.score);
+  const category = scoreCategory(roundedScore);
+  const color = scoreColor(roundedScore);
+
+  overviewDescription.textContent = property.description;
+  overviewPrice.textContent = `${currencyFormatter.format(property.propertyValue)} · ${decimalFormatter.format(property.propertySize)} m²`;
+  overviewScore.textContent = decimalFormatter.format(roundedScore);
+  overviewTitle.textContent = category.label;
+  overviewRange.textContent = `Faixa ${category.range}`;
+  overviewDialog.style.setProperty("--overview-score-color", color);
+  overviewScoreOrb.style.setProperty("--overview-score-color", color);
+  overviewScoreOrb.style.setProperty("--overview-score-progress", `${roundedScore}%`);
+  overviewPointsElements.value.textContent = formatPoints(calculation.valueScore);
+  overviewPointsElements.condo.textContent = formatPoints(calculation.condoScore);
+  overviewPointsElements.size.textContent = formatPoints(calculation.sizeScore);
+  overviewPointsElements.location.textContent = formatPoints(property.location);
+  overviewPointsElements.furniture.textContent = formatPoints(property.furniture);
+  overviewPointsElements.garage.textContent = formatPoints(property.garage);
+  overviewPointsElements.bonus.textContent = `+${calculation.bonus}`;
+
+  if (typeof overviewDialog.showModal === "function") {
+    overviewDialog.showModal();
+  } else {
+    overviewDialog.setAttribute("open", "");
+  }
+}
+
+function closePropertyOverview() {
+  if (typeof overviewDialog.close === "function") {
+    overviewDialog.close();
+  } else {
+    overviewDialog.removeAttribute("open");
+  }
+}
+
 function renderProperties() {
   list.replaceChildren();
   emptyState.hidden = properties.length > 0;
@@ -324,75 +471,29 @@ function renderProperties() {
 
   const fragment = document.createDocumentFragment();
 
-  properties.forEach((property) => {
-    const card = cardTemplate.content.firstElementChild.cloneNode(true);
-    const image = card.querySelector(".property-image");
-    const fallback = card.querySelector(".property-image-fallback");
-    const cardScore = card.querySelector(".card-score");
-    const roundedScore = roundScore(property.score);
+  SCORE_CATEGORIES.forEach((category) => {
+    const categoryProperties = properties.filter(
+      (property) => scoreCategory(property.score).key === category.key,
+    );
+    if (categoryProperties.length === 0) return;
 
-    image.hidden = true;
-    fallback.hidden = false;
+    const section = document.createElement("section");
+    section.className = "property-category";
+    section.style.setProperty("--category-color", scoreColor(category.min));
 
-    if (typeof property.photo === "string" && property.photo.startsWith("data:image/")) {
-      image.alt = `Foto do imóvel: ${property.description}`;
-      image.onload = () => {
-        image.hidden = false;
-        fallback.hidden = true;
-      };
-      image.onerror = () => {
-        image.hidden = true;
-        fallback.hidden = false;
-      };
-      image.src = property.photo;
-    }
+    const heading = document.createElement("div");
+    heading.className = "category-divider";
+    heading.innerHTML = `
+      <h3>${category.label} <small>${category.range}</small></h3>
+      <span aria-hidden="true"></span>
+      <p>${categoryProperties.length} ${categoryProperties.length === 1 ? "imóvel" : "imóveis"}</p>
+    `;
 
-    cardScore.style.setProperty("--card-score-color", scoreColor(roundedScore));
-    cardScore.querySelector("strong").textContent = decimalFormatter.format(roundedScore);
-    card.querySelector(".property-meta").textContent = `${decimalFormatter.format(property.propertySize)} m²`;
-    card.querySelector(".property-price").textContent = currencyFormatter.format(property.propertyValue);
-    card.querySelector(".property-description").textContent = property.description;
-    card.querySelector(".score-label").textContent = labelForScore(roundedScore);
-
-    const whatsappLink = card.querySelector(".whatsapp-link");
-    const whatsappNumber = normalizePhoneDigits(property.contact);
-    if (whatsappNumber) {
-      const message = `Olá! Tenho interesse neste imóvel: ${property.description.slice(0, 120)}`;
-      whatsappLink.href = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
-      whatsappLink.setAttribute(
-        "aria-label",
-        `Abrir conversa no WhatsApp com a imobiliária: ${property.contact}`,
-      );
-      whatsappLink.title = property.contact;
-      whatsappLink.hidden = false;
-    }
-
-    const detailsContainer = card.querySelector(".property-details");
-    buildDetailTags(property).forEach((detail) => {
-      const tag = document.createElement("span");
-      tag.textContent = detail;
-      detailsContainer.append(tag);
-    });
-
-    card.querySelector(".edit-button").addEventListener("click", () => {
-      startEditing(property);
-    });
-
-    card.querySelector(".delete-button").addEventListener("click", () => {
-      const confirmed = window.confirm("Excluir este imóvel da lista?");
-      if (!confirmed) return;
-      properties = properties.filter((item) => item.id !== property.id);
-      try {
-        persistProperties();
-        if (editingPropertyId === property.id) resetForm();
-        renderProperties();
-        showToast("Imóvel excluído.");
-      } catch (error) {
-        showToast("Não foi possível excluir o imóvel.");
-      }
-    });
-
-    fragment.append(card);
+    const cards = document.createElement("div");
+    cards.className = "category-cards";
+    categoryProperties.forEach((property) => cards.append(createPropertyCard(property)));
+    section.append(heading, cards);
+    fragment.append(section);
   });
 
   list.append(fragment);
@@ -882,6 +983,10 @@ cancelEditButton.addEventListener("click", () => {
   resetForm();
   showError("");
   showToast("Edição cancelada.");
+});
+overviewCloseButton.addEventListener("click", closePropertyOverview);
+overviewDialog.addEventListener("click", (event) => {
+  if (event.target === overviewDialog) closePropertyOverview();
 });
 document.querySelectorAll("[data-slider]").forEach((option) => {
   option.addEventListener("click", () => {

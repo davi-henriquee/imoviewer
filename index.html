@@ -490,6 +490,41 @@
       </article>
     </template>
 
+    <dialog
+      class="property-overview-dialog"
+      id="propertyOverviewDialog"
+      aria-labelledby="overviewTitle"
+    >
+      <div class="overview-card">
+        <button class="overview-close" id="overviewCloseButton" type="button" aria-label="Fechar detalhes">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="m6.4 5 5.6 5.6L17.6 5 19 6.4 13.4 12l5.6 5.6-1.4 1.4-5.6-5.6L6.4 19 5 17.6l5.6-5.6L5 6.4 6.4 5Z" />
+          </svg>
+        </button>
+
+        <p class="eyebrow overview-eyebrow">Detalhes da nota</p>
+        <p class="overview-description" id="overviewDescription"></p>
+        <p class="overview-price" id="overviewPrice"></p>
+
+        <div class="overview-score-orb" id="overviewScoreOrb">
+          <span id="overviewScore"></span>
+          <small>/100</small>
+        </div>
+        <h2 id="overviewTitle"></h2>
+        <p class="overview-range" id="overviewRange"></p>
+
+        <div class="overview-breakdown" aria-label="Detalhamento da pontuação do imóvel">
+          <div><span>Valor do imóvel</span><strong id="overviewValuePoints"></strong></div>
+          <div><span>Condomínio</span><strong id="overviewCondoPoints"></strong></div>
+          <div><span>Tamanho</span><strong id="overviewSizePoints"></strong></div>
+          <div><span>Localização</span><strong id="overviewLocationPoints"></strong></div>
+          <div><span>Mobília</span><strong id="overviewFurniturePoints"></strong></div>
+          <div><span>Garagem</span><strong id="overviewGaragePoints"></strong></div>
+          <div class="bonus-row"><span>Bônus</span><strong id="overviewBonusPoints"></strong></div>
+        </div>
+      </div>
+    </dialog>
+
     <div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
   </body>
 </html>
