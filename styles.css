@@ -1131,6 +1131,22 @@ textarea {
   color: #a8ead4;
 }
 
+.score-breakdown .requirement-row,
+.overview-breakdown .requirement-row {
+  color: #c8d5df;
+  background: rgba(255, 255, 255, 0.045);
+}
+
+.score-breakdown .requirement-row.is-met strong,
+.overview-breakdown .requirement-row.is-met strong {
+  color: #7ce3bd;
+}
+
+.score-breakdown .requirement-row.is-failed strong,
+.overview-breakdown .requirement-row.is-failed strong {
+  color: #fbbf74;
+}
+
 .score-rule {
   margin: 17px 0 0;
   color: #93a9bb;
@@ -1408,6 +1424,10 @@ textarea {
   color: var(--score-color);
   font-size: 0.72rem;
   font-weight: 800;
+}
+
+.score-label.is-ineligible {
+  color: #b45309;
 }
 
 .card-actions {

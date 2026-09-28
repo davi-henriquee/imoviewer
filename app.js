@@ -5,7 +5,16 @@ const ACCESS_SESSION_KEY = "imoviewer:access-granted";
 const ACCESS_PASSWORD = "2007";
 const BACKUP_FORMAT = "imoviewer-backup";
 const BACKUP_FILE_NAME = "imoviewer.json";
-const SCORE_CATEGORY_COUNT = 6;
+const RENT_FULL_SCORE_AT = 1400;
+const RENT_LIMIT = 2000;
+const SCORE_WEIGHTS = {
+  value: 30,
+  condo: 15,
+  size: 10,
+  location: 20,
+  furniture: 20,
+  extras: 5,
+};
 const LOCATION_SCORES = [0, 25, 50, 75, 100];
 const LOCATION_LABELS = [
   "Muito mal localizado",
@@ -29,6 +38,11 @@ const SCORE_CATEGORIES = [
   { key: "bad", min: 51, range: "51–60", label: "Opção ruim" },
   { key: "terrible", min: 0, range: "0–50", label: "Péssima opção" },
 ];
+const INELIGIBLE_CATEGORY = {
+  key: "ineligible",
+  range: "Sem vaga ou acima de R$ 2.000",
+  label: "Não atende aos requisitos",
+};
 
 const loginScreen = document.querySelector("#loginScreen");
 const loginForm = document.querySelector("#loginForm");
@@ -82,6 +96,7 @@ const overviewPointsElements = {
   location: document.querySelector("#overviewLocationPoints"),
   furniture: document.querySelector("#overviewFurniturePoints"),
   garage: document.querySelector("#overviewGaragePoints"),
+  budget: document.querySelector("#overviewBudgetPoints"),
   bonus: document.querySelector("#overviewBonusPoints"),
 };
 
@@ -92,6 +107,7 @@ const pointsElements = {
   location: document.querySelector("#locationPoints"),
   furniture: document.querySelector("#furniturePoints"),
   garage: document.querySelector("#garagePoints"),
+  budget: document.querySelector("#budgetPoints"),
   bonus: document.querySelector("#bonusPoints"),
 };
 
@@ -130,6 +146,13 @@ function scoreLowerIsBetter(value, fullScoreAt, zeroScoreAt) {
   if (value <= fullScoreAt) return 100;
   if (value >= zeroScoreAt) return 0;
   return ((zeroScoreAt - value) / (zeroScoreAt - fullScoreAt)) * 100;
+}
+
+function scoreRent(value) {
+  if (!Number.isFinite(value)) return null;
+  if (value <= RENT_FULL_SCORE_AT) return 100;
+  if (value > RENT_LIMIT) return 0;
+  return 100 - ((value - RENT_FULL_SCORE_AT) / (RENT_LIMIT - RENT_FULL_SCORE_AT)) * 60;
 }
 
 function scoreHigherIsBetter(value, zeroScoreAt, fullScoreAt) {
@@ -194,24 +217,29 @@ function getExtraNames(source = form.elements) {
 
 function calculateScore(data) {
   const effectiveCondo = Math.max(0, data.condoValue - (data.waterIncluded ? 100 : 0));
-  const valueScore = scoreLowerIsBetter(data.propertyValue, 1400, 2000);
+  const valueScore = scoreRent(data.propertyValue);
   const condoScore = scoreLowerIsBetter(effectiveCondo, 150, 400);
   const sizeScore = scoreHigherIsBetter(data.propertySize, 15, 70);
-  const bonus = data.extras.length * 5;
-  const scoreParts = [
-    valueScore,
-    condoScore,
-    sizeScore,
-    data.location,
-    data.furniture,
-    data.garage,
-  ];
+  const extraCount = Array.isArray(data.extras) ? data.extras.length : 0;
+  const hasGarage = Number(data.garage) >= 100;
+  const withinBudget = Number.isFinite(data.propertyValue) ? data.propertyValue <= RENT_LIMIT : null;
+  const scoreParts = [valueScore, condoScore, sizeScore, data.location, data.furniture];
   const complete = scoreParts.every(Number.isFinite);
-  const average = complete
-    ? scoreParts.reduce((total, value) => total + value, 0) / SCORE_CATEGORY_COUNT
+  const contributions = complete
+    ? {
+        value: (valueScore / 100) * SCORE_WEIGHTS.value,
+        condo: (condoScore / 100) * SCORE_WEIGHTS.condo,
+        size: (sizeScore / 100) * SCORE_WEIGHTS.size,
+        location: (data.location / 100) * SCORE_WEIGHTS.location,
+        furniture: (data.furniture / 100) * SCORE_WEIGHTS.furniture,
+        extras: (clamp(extraCount, 0, 3) / 3) * SCORE_WEIGHTS.extras,
+      }
     : null;
-  const rawScore = complete ? average + bonus : null;
+  const rawScore = complete
+    ? Object.values(contributions).reduce((total, value) => total + value, 0)
+    : null;
   const finalScore = complete ? clamp(rawScore, 0, 100) : null;
+  const meetsRequirements = complete && hasGarage && withinBudget === true;
 
   return {
     complete,
@@ -219,10 +247,26 @@ function calculateScore(data) {
     valueScore,
     condoScore,
     sizeScore,
-    bonus,
-    average,
+    contributions,
     rawScore,
     finalScore,
+    hasGarage,
+    withinBudget,
+    meetsRequirements,
+  };
+}
+
+function scoreDetailsFromCalculation(calculation) {
+  if (!calculation.contributions) return {};
+  return {
+    value: roundScore(calculation.contributions.value),
+    condo: roundScore(calculation.contributions.condo),
+    size: roundScore(calculation.contributions.size),
+    location: roundScore(calculation.contributions.location),
+    furniture: roundScore(calculation.contributions.furniture),
+    extras: roundScore(calculation.contributions.extras),
+    hasGarage: calculation.hasGarage,
+    withinBudget: calculation.withinBudget,
   };
 }
 
@@ -248,7 +292,18 @@ function scoreColor(score) {
   return `hsl(${hue} 72% ${lightness}%)`;
 }
 
-function scoreCopy(score) {
+function requirementMessage(calculation) {
+  if (!calculation.withinBudget && !calculation.hasGarage) {
+    return "O valor ultrapassa R$ 2.000 e o imóvel não tem vaga de garagem.";
+  }
+  if (!calculation.withinBudget) return "O valor ultrapassa o teto de R$ 2.000.";
+  return "Este imóvel não tem a vaga de garagem necessária.";
+}
+
+function scoreCopy(score, calculation) {
+  if (calculation?.complete && !calculation.meetsRequirements) {
+    return ["Não atende aos requisitos", requirementMessage(calculation)];
+  }
   const category = scoreCategory(score);
   const messages = {
     best: "Este imóvel reúne a combinação mais forte entre os critérios avaliados.",
@@ -266,22 +321,41 @@ function scoreCategory(score) {
   return SCORE_CATEGORIES.find((category) => safeScore >= category.min) || SCORE_CATEGORIES.at(-1);
 }
 
+function propertyCategory(property, calculation = calculateScore(property)) {
+  if (calculation.complete && !calculation.meetsRequirements) return INELIGIBLE_CATEGORY;
+  return scoreCategory(calculation.finalScore ?? property.score);
+}
+
 function formatPoints(value) {
   if (!Number.isFinite(value)) return "—";
   return decimalFormatter.format(roundScore(value));
+}
+
+function showRequirement(element, meetsRequirement) {
+  if (typeof meetsRequirement !== "boolean") {
+    element.textContent = "—";
+    const row = element.closest("div");
+    row?.classList.remove("is-met", "is-failed");
+    return;
+  }
+  element.textContent = meetsRequirement ? "Atende" : "Não atende";
+  const row = element.closest("div");
+  row?.classList.toggle("is-met", meetsRequirement);
+  row?.classList.toggle("is-failed", !meetsRequirement);
 }
 
 function updateLiveScore() {
   const data = readFormData();
   const calculation = calculateScore(data);
 
-  pointsElements.value.textContent = formatPoints(calculation.valueScore);
-  pointsElements.condo.textContent = formatPoints(calculation.condoScore);
-  pointsElements.size.textContent = formatPoints(calculation.sizeScore);
-  pointsElements.location.textContent = formatPoints(data.location);
-  pointsElements.furniture.textContent = formatPoints(data.furniture);
-  pointsElements.garage.textContent = formatPoints(data.garage);
-  pointsElements.bonus.textContent = `+${calculation.bonus}`;
+  pointsElements.value.textContent = formatPoints(calculation.contributions?.value);
+  pointsElements.condo.textContent = formatPoints(calculation.contributions?.condo);
+  pointsElements.size.textContent = formatPoints(calculation.contributions?.size);
+  pointsElements.location.textContent = formatPoints(calculation.contributions?.location);
+  pointsElements.furniture.textContent = formatPoints(calculation.contributions?.furniture);
+  pointsElements.bonus.textContent = formatPoints(calculation.contributions?.extras);
+  showRequirement(pointsElements.garage, calculation.hasGarage);
+  showRequirement(pointsElements.budget, calculation.withinBudget);
 
   if (!calculation.complete) {
     liveScore.textContent = "—";
@@ -294,8 +368,8 @@ function updateLiveScore() {
   }
 
   const finalScore = Math.round(calculation.finalScore);
-  const [title, message] = scoreCopy(finalScore);
-  const color = scoreColor(finalScore);
+  const [title, message] = scoreCopy(finalScore, calculation);
+  const color = calculation.meetsRequirements ? scoreColor(finalScore) : "#d97706";
   liveScore.textContent = decimalFormatter.format(finalScore);
   scoreTitle.textContent = title;
   scoreMessage.textContent = message;
@@ -311,13 +385,20 @@ function loadProperties() {
     return Array.isArray(parsed)
       ? parsed
           .filter((property) => property && typeof property === "object")
-          .map((property) => ({
-            ...property,
-            extras: Array.isArray(property.extras) ? property.extras : [],
-            photo: typeof property.photo === "string" ? property.photo : "",
-            website: normalizeWebsiteUrl(property.website || property.link || ""),
-            score: Math.round(Number(property.score) || 0),
-          }))
+          .map((property) => {
+            const normalizedProperty = {
+              ...property,
+              extras: Array.isArray(property.extras) ? property.extras : [],
+              photo: typeof property.photo === "string" ? property.photo : "",
+              website: normalizeWebsiteUrl(property.website || property.link || ""),
+            };
+            const calculation = calculateScore(normalizedProperty);
+            return {
+              ...normalizedProperty,
+              score: Math.round(calculation.finalScore ?? (Number(property.score) || 0)),
+              scoreDetails: scoreDetailsFromCalculation(calculation),
+            };
+          })
       : [];
   } catch (error) {
     console.warn("Não foi possível carregar os imóveis salvos.", error);
@@ -327,10 +408,6 @@ function loadProperties() {
 
 function persistProperties() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(properties));
-}
-
-function labelForScore(score) {
-  return scoreCategory(score).label;
 }
 
 function buildDetailTags(property) {
@@ -351,7 +428,9 @@ function createPropertyCard(property) {
   const image = card.querySelector(".property-image");
   const fallback = card.querySelector(".property-image-fallback");
   const cardScore = card.querySelector(".card-score");
-  const roundedScore = Math.round(Number(property.score) || 0);
+  const calculation = calculateScore(property);
+  const roundedScore = Math.round(calculation.finalScore ?? (Number(property.score) || 0));
+  const category = propertyCategory(property, calculation);
 
   card.tabIndex = 0;
   card.title = "Clique para ver os detalhes da nota";
@@ -373,12 +452,16 @@ function createPropertyCard(property) {
     image.src = property.photo;
   }
 
-  cardScore.style.setProperty("--card-score-color", scoreColor(roundedScore));
+  cardScore.style.setProperty(
+    "--card-score-color",
+    calculation.meetsRequirements ? scoreColor(roundedScore) : "#d97706",
+  );
   cardScore.querySelector("strong").textContent = decimalFormatter.format(roundedScore);
   card.querySelector(".property-meta").textContent = `${decimalFormatter.format(property.propertySize)} m²`;
   card.querySelector(".property-price").textContent = currencyFormatter.format(property.propertyValue);
   card.querySelector(".property-description").textContent = property.description;
-  card.querySelector(".score-label").textContent = labelForScore(roundedScore);
+  card.querySelector(".score-label").textContent = category.label;
+  card.querySelector(".score-label").classList.toggle("is-ineligible", !calculation.meetsRequirements);
 
   const webLink = card.querySelector(".web-link");
   const website = normalizeWebsiteUrl(property.website);
@@ -431,24 +514,27 @@ function createPropertyCard(property) {
 function openPropertyOverview(property) {
   const calculation = calculateScore(property);
   const roundedScore = Math.round(calculation.finalScore ?? property.score);
-  const category = scoreCategory(roundedScore);
-  const color = scoreColor(roundedScore);
+  const category = propertyCategory(property, calculation);
+  const color = calculation.meetsRequirements ? scoreColor(roundedScore) : "#d97706";
 
   overviewDescription.textContent = property.description;
   overviewPrice.textContent = `${currencyFormatter.format(property.propertyValue)} · ${decimalFormatter.format(property.propertySize)} m²`;
   overviewScore.textContent = decimalFormatter.format(roundedScore);
   overviewTitle.textContent = category.label;
-  overviewRange.textContent = `Faixa ${category.range}`;
+  overviewRange.textContent = calculation.meetsRequirements
+    ? `Faixa ${category.range}`
+    : category.range;
   overviewDialog.style.setProperty("--overview-score-color", color);
   overviewScoreOrb.style.setProperty("--overview-score-color", color);
   overviewScoreOrb.style.setProperty("--overview-score-progress", `${roundedScore}%`);
-  overviewPointsElements.value.textContent = formatPoints(calculation.valueScore);
-  overviewPointsElements.condo.textContent = formatPoints(calculation.condoScore);
-  overviewPointsElements.size.textContent = formatPoints(calculation.sizeScore);
-  overviewPointsElements.location.textContent = formatPoints(property.location);
-  overviewPointsElements.furniture.textContent = formatPoints(property.furniture);
-  overviewPointsElements.garage.textContent = formatPoints(property.garage);
-  overviewPointsElements.bonus.textContent = `+${calculation.bonus}`;
+  overviewPointsElements.value.textContent = formatPoints(calculation.contributions?.value);
+  overviewPointsElements.condo.textContent = formatPoints(calculation.contributions?.condo);
+  overviewPointsElements.size.textContent = formatPoints(calculation.contributions?.size);
+  overviewPointsElements.location.textContent = formatPoints(calculation.contributions?.location);
+  overviewPointsElements.furniture.textContent = formatPoints(calculation.contributions?.furniture);
+  overviewPointsElements.bonus.textContent = formatPoints(calculation.contributions?.extras);
+  showRequirement(overviewPointsElements.garage, calculation.hasGarage);
+  showRequirement(overviewPointsElements.budget, calculation.withinBudget);
 
   if (typeof overviewDialog.showModal === "function") {
     overviewDialog.showModal();
@@ -477,9 +563,9 @@ function renderProperties() {
 
   const fragment = document.createDocumentFragment();
 
-  SCORE_CATEGORIES.forEach((category) => {
+  [...SCORE_CATEGORIES, INELIGIBLE_CATEGORY].forEach((category) => {
     const categoryProperties = properties
-      .filter((property) => scoreCategory(property.score).key === category.key)
+      .filter((property) => propertyCategory(property).key === category.key)
       .sort((left, right) => {
         const scoreDifference = Number(right.score) - Number(left.score);
         if (scoreDifference !== 0) return scoreDifference;
@@ -489,7 +575,10 @@ function renderProperties() {
 
     const section = document.createElement("section");
     section.className = "property-category";
-    section.style.setProperty("--category-color", scoreColor(category.min));
+    section.style.setProperty(
+      "--category-color",
+      category.key === INELIGIBLE_CATEGORY.key ? "#d97706" : scoreColor(category.min),
+    );
 
     const heading = document.createElement("div");
     heading.className = "category-divider";
@@ -806,12 +895,7 @@ function createPropertyRecord(data, photo = "") {
     extras: data.extras,
     photo,
     score: Math.round(calculation.finalScore),
-    scoreDetails: {
-      value: roundScore(calculation.valueScore),
-      condo: roundScore(calculation.condoScore),
-      size: roundScore(calculation.sizeScore),
-      bonus: calculation.bonus,
-    },
+    scoreDetails: scoreDetailsFromCalculation(calculation),
   };
 }
 

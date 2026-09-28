@@ -14,8 +14,8 @@
       href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23102a43'/%3E%3Cpath d='M14 31 32 16l18 15v19H37V38H27v12H14Z' fill='%23fff'/%3E%3Cpath d='m41 18 8 7v-9h-8Z' fill='%2334d399'/%3E%3C/svg%3E"
     />
     <title>Imoviewer</title>
-    <link rel="stylesheet" href="styles.css?v=20260928.2" />
-    <script src="app.js?v=20260928.2" defer></script>
+    <link rel="stylesheet" href="styles.css?v=20260928.3" />
+    <script src="app.js?v=20260928.3" defer></script>
   </head>
   <body class="is-locked">
     <div class="login-screen" id="loginScreen" role="dialog" aria-modal="true" aria-labelledby="loginTitle">
@@ -97,7 +97,7 @@
 
               <div class="field-grid">
                 <label class="field">
-                  <span>Valor do imóvel</span>
+                  <span>Valor do aluguel</span>
                   <span class="money-input">
                     <span aria-hidden="true">R$</span>
                     <input
@@ -259,25 +259,25 @@
               </fieldset>
 
               <fieldset class="choice-group">
-                <legend>Vaga de garagem</legend>
+                <legend>Vaga de garagem <small>requisito obrigatório</small></legend>
                 <div class="segmented segmented-three">
                   <label>
                     <input type="radio" name="garage" value="0" checked />
-                    <span>Sem vaga<br /><em>0 pts</em></span>
+                    <span>Sem vaga<br /><em>Não atende</em></span>
                   </label>
                   <label>
                     <input type="radio" name="garage" value="100" />
-                    <span>1 vaga<br /><em>100 pts</em></span>
+                    <span>1 vaga<br /><em>Atende</em></span>
                   </label>
                   <label>
                     <input type="radio" name="garage" value="200" />
-                    <span>2 vagas<br /><em>200 pts</em></span>
+                    <span>2 vagas<br /><em>Atende</em></span>
                   </label>
                 </div>
               </fieldset>
 
               <fieldset class="choice-group extras-group">
-                <legend>Extras <small>+5 pontos cada</small></legend>
+                <legend>Extras <small>até 5 pontos no total</small></legend>
                 <div class="extras-grid">
                   <label class="check-card" for="barbecue">
                     <input id="barbecue" name="barbecue" type="checkbox" />
@@ -392,32 +392,36 @@
 
               <div class="score-breakdown" id="scoreBreakdown" aria-label="Detalhamento da nota">
                 <div>
-                  <span>Imóvel</span>
+                  <span>Aluguel · 30%</span>
                   <strong id="valuePoints">—</strong>
                 </div>
                 <div>
-                  <span>Condomínio</span>
+                  <span>Condomínio · 15%</span>
                   <strong id="condoPoints">—</strong>
                 </div>
                 <div>
-                  <span>Tamanho</span>
+                  <span>Mobília · 20%</span>
+                  <strong id="furniturePoints">—</strong>
+                </div>
+                <div>
+                  <span>Localização · 20%</span>
+                  <strong id="locationPoints">—</strong>
+                </div>
+                <div>
+                  <span>Tamanho · 10%</span>
                   <strong id="sizePoints">—</strong>
                 </div>
-                <div>
-                  <span>Localização</span>
-                  <strong id="locationPoints">50</strong>
-                </div>
-                <div>
-                  <span>Mobília</span>
-                  <strong id="furniturePoints">0</strong>
-                </div>
-                <div>
-                  <span>Garagem</span>
-                  <strong id="garagePoints">0</strong>
-                </div>
                 <div class="bonus-row">
-                  <span>Bônus</span>
-                  <strong id="bonusPoints">+0</strong>
+                  <span>Extras · 5%</span>
+                  <strong id="bonusPoints">—</strong>
+                </div>
+                <div class="requirement-row">
+                  <span>Garagem obrigatória</span>
+                  <strong id="garagePoints">Não atende</strong>
+                </div>
+                <div class="requirement-row">
+                  <span>Aluguel até R$ 2.000</span>
+                  <strong id="budgetPoints">—</strong>
                 </div>
               </div>
 
@@ -514,13 +518,14 @@
         <p class="overview-range" id="overviewRange"></p>
 
         <div class="overview-breakdown" aria-label="Detalhamento da pontuação do imóvel">
-          <div><span>Valor do imóvel</span><strong id="overviewValuePoints"></strong></div>
-          <div><span>Condomínio</span><strong id="overviewCondoPoints"></strong></div>
-          <div><span>Tamanho</span><strong id="overviewSizePoints"></strong></div>
-          <div><span>Localização</span><strong id="overviewLocationPoints"></strong></div>
-          <div><span>Mobília</span><strong id="overviewFurniturePoints"></strong></div>
-          <div><span>Garagem</span><strong id="overviewGaragePoints"></strong></div>
-          <div class="bonus-row"><span>Bônus</span><strong id="overviewBonusPoints"></strong></div>
+          <div><span>Aluguel · 30%</span><strong id="overviewValuePoints"></strong></div>
+          <div><span>Condomínio · 15%</span><strong id="overviewCondoPoints"></strong></div>
+          <div><span>Mobília · 20%</span><strong id="overviewFurniturePoints"></strong></div>
+          <div><span>Localização · 20%</span><strong id="overviewLocationPoints"></strong></div>
+          <div><span>Tamanho · 10%</span><strong id="overviewSizePoints"></strong></div>
+          <div class="bonus-row"><span>Extras · 5%</span><strong id="overviewBonusPoints"></strong></div>
+          <div class="requirement-row"><span>Garagem obrigatória</span><strong id="overviewGaragePoints"></strong></div>
+          <div class="requirement-row"><span>Aluguel até R$ 2.000</span><strong id="overviewBudgetPoints"></strong></div>
         </div>
       </div>
     </dialog>
