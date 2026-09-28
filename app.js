@@ -6,6 +6,21 @@ const ACCESS_PASSWORD = "2007";
 const BACKUP_FORMAT = "imoviewer-backup";
 const BACKUP_FILE_NAME = "imoviewer.json";
 const SCORE_CATEGORY_COUNT = 6;
+const LOCATION_SCORES = [0, 25, 50, 75, 100];
+const LOCATION_LABELS = [
+  "Muito mal localizado",
+  "Mal localizado",
+  "Localização ok",
+  "Bem localizado",
+  "Localização privilegiada",
+];
+const FURNITURE_SCORES = [0, 25, 50, 100];
+const FURNITURE_LABELS = [
+  "Sem nenhuma mobília",
+  "Pouquíssima mobília",
+  "Bem mobiliado",
+  "Completamente mobiliado",
+];
 
 const loginScreen = document.querySelector("#loginScreen");
 const loginForm = document.querySelector("#loginForm");
@@ -16,8 +31,13 @@ const propertyValueInput = document.querySelector("#propertyValue");
 const condoValueInput = document.querySelector("#condoValue");
 const propertySizeInput = document.querySelector("#propertySize");
 const waterIncludedInput = document.querySelector("#waterIncluded");
+const locationSlider = document.querySelector("#locationSlider");
+const furnitureSlider = document.querySelector("#furnitureSlider");
+const locationSelection = document.querySelector("#locationSelection");
+const furnitureSelection = document.querySelector("#furnitureSelection");
 const descriptionInput = document.querySelector("#description");
 const descriptionCount = document.querySelector("#descriptionCount");
+const contactInput = document.querySelector("#agencyContact");
 const photoInput = document.querySelector("#propertyPhoto");
 const photoPreview = document.querySelector("#photoPreview");
 const photoPlaceholder = document.querySelector("#photoPlaceholder");
@@ -94,6 +114,29 @@ function getCheckedNumber(name) {
   return Number(form.elements[name].value);
 }
 
+function getSliderScore(input, scores) {
+  return scores[Number(input.value)] ?? scores[0];
+}
+
+function updateSlider(input, output, labels) {
+  const index = clamp(Number(input.value), 0, labels.length - 1);
+  const progress = labels.length > 1 ? (index / (labels.length - 1)) * 100 : 0;
+  output.textContent = labels[index];
+  input.setAttribute("aria-valuetext", labels[index]);
+  input.style.setProperty("--range-progress", `${progress}%`);
+}
+
+function updateSliders() {
+  updateSlider(locationSlider, locationSelection, LOCATION_LABELS);
+  updateSlider(furnitureSlider, furnitureSelection, FURNITURE_LABELS);
+}
+
+function normalizePhoneDigits(value) {
+  let digits = String(value || "").replace(/\D/g, "");
+  if (digits.length === 10 || digits.length === 11) digits = `55${digits}`;
+  return digits.length === 12 || digits.length === 13 ? digits : "";
+}
+
 function parseInputNumber(input) {
   return input.value.trim() === "" ? Number.NaN : Number(input.value);
 }
@@ -146,11 +189,12 @@ function readFormData() {
     condoValue: parseInputNumber(condoValueInput),
     propertySize: parseInputNumber(propertySizeInput),
     waterIncluded: waterIncludedInput.checked,
-    location: getCheckedNumber("location"),
-    furniture: getCheckedNumber("furniture"),
+    location: getSliderScore(locationSlider, LOCATION_SCORES),
+    furniture: getSliderScore(furnitureSlider, FURNITURE_SCORES),
     garage: getCheckedNumber("garage"),
     extras: getExtraNames(),
     description: descriptionInput.value.trim(),
+    contact: contactInput.value.trim(),
   };
 }
 
@@ -226,6 +270,7 @@ function loadProperties() {
             ...property,
             extras: Array.isArray(property.extras) ? property.extras : [],
             photo: typeof property.photo === "string" ? property.photo : "",
+            contact: typeof property.contact === "string" ? property.contact : "",
           }))
       : [];
   } catch (error) {
@@ -301,6 +346,19 @@ function renderProperties() {
     card.querySelector(".property-description").textContent = property.description;
     card.querySelector(".score-label").textContent = labelForScore(roundedScore);
 
+    const whatsappLink = card.querySelector(".whatsapp-link");
+    const whatsappNumber = normalizePhoneDigits(property.contact);
+    if (whatsappNumber) {
+      const message = `Olá! Tenho interesse neste imóvel: ${property.description.slice(0, 120)}`;
+      whatsappLink.href = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
+      whatsappLink.setAttribute(
+        "aria-label",
+        `Abrir conversa no WhatsApp com a imobiliária: ${property.contact}`,
+      );
+      whatsappLink.title = property.contact;
+      whatsappLink.hidden = false;
+    }
+
     const detailsContainer = card.querySelector(".property-details");
     buildDetailTags(property).forEach((detail) => {
       const tag = document.createElement("span");
@@ -337,6 +395,9 @@ function validateData(data) {
   }
   if (!Number.isFinite(data.propertySize) || data.propertySize <= 0) {
     return "Informe um tamanho válido para o imóvel.";
+  }
+  if (data.contact && !normalizePhoneDigits(data.contact)) {
+    return "Informe um contato válido com DDD, por exemplo: (11) 99999-9999.";
   }
   return "";
 }
@@ -379,11 +440,12 @@ function resetPhotoPreview() {
 
 function resetForm() {
   form.reset();
-  form.elements.location.value = "50";
+  form.elements.location.value = "2";
   form.elements.furniture.value = "0";
   form.elements.garage.value = "0";
   descriptionCount.textContent = "0";
   resetPhotoPreview();
+  updateSliders();
   updateLiveScore();
 }
 
@@ -452,6 +514,7 @@ function sanitizeBackupProperty(item, index) {
     location: Number(item.location),
     furniture: Number(item.furniture),
     garage: Number(item.garage),
+    contact: String(item.contact || "").trim().slice(0, 20),
     extras: Array.isArray(item.extras)
       ? item.extras.filter((extra) => ["Churrasqueira", "Sacada", "Elevador"].includes(extra))
       : [],
@@ -573,6 +636,7 @@ function createPropertyRecord(data, photo = "") {
     location: data.location,
     furniture: data.furniture,
     garage: data.garage,
+    contact: data.contact || "",
     extras: data.extras,
     photo,
     score: roundScore(calculation.finalScore),
@@ -639,6 +703,7 @@ function normalizeToolData(input) {
     location: Number(input.localizacao),
     furniture: Number(input.mobilia),
     garage: Number(input.garagem),
+    contact: String(input.contato_imobiliaria || "").trim().slice(0, 20),
     extras,
   };
 }
@@ -673,6 +738,11 @@ function registerWebMcpTools() {
         localizacao: { type: "number", enum: [0, 25, 50, 75, 100] },
         mobilia: { type: "number", enum: [0, 25, 50, 100] },
         garagem: { type: "number", enum: [0, 100, 200] },
+        contato_imobiliaria: {
+          type: "string",
+          maxLength: 20,
+          description: "Telefone opcional da imobiliária, com DDD.",
+        },
         extras: {
           type: "array",
           uniqueItems: true,
@@ -720,6 +790,7 @@ function registerWebMcpTools() {
         id: property.id,
         descricao: property.description,
         valor_imovel: property.propertyValue,
+        contato_imobiliaria: property.contact,
         nota: property.score,
       }));
     },
@@ -729,6 +800,7 @@ function registerWebMcpTools() {
 form.addEventListener("input", () => {
   showError("");
   descriptionCount.textContent = String(descriptionInput.value.length);
+  updateSliders();
   updateLiveScore();
 });
 
@@ -759,6 +831,7 @@ photoInput.addEventListener("change", () => {
 });
 
 renderProperties();
+updateSliders();
 updateLiveScore();
 initializeAccess();
 void loadBundledBackup();

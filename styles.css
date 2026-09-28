@@ -586,6 +586,87 @@ input[type="number"]::-webkit-outer-spin-button {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
+.slider-group {
+  padding: 2px 2px 4px;
+}
+
+.slider-control {
+  --range-progress: 0%;
+  display: grid;
+  padding: 17px 16px 15px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: #f8fafc;
+}
+
+.slider-control input[type="range"] {
+  width: 100%;
+  height: 8px;
+  margin: 6px 0 0;
+  border-radius: 999px;
+  outline: none;
+  background: linear-gradient(
+    to right,
+    var(--accent) 0 var(--range-progress),
+    #dce5ec var(--range-progress) 100%
+  );
+  cursor: pointer;
+  appearance: none;
+}
+
+.slider-control input[type="range"]::-webkit-slider-thumb {
+  width: 24px;
+  height: 24px;
+  border: 4px solid #fff;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 2px 8px rgba(16, 42, 67, 0.3);
+  appearance: none;
+}
+
+.slider-control input[type="range"]::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border: 4px solid #fff;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 2px 8px rgba(16, 42, 67, 0.3);
+}
+
+.slider-control input[type="range"]:focus-visible {
+  box-shadow: 0 0 0 4px rgba(15, 118, 110, 0.16);
+}
+
+.slider-points {
+  display: grid;
+  justify-items: center;
+  margin: 9px 4px 0;
+}
+
+.slider-points-five {
+  grid-template-columns: repeat(5, 1fr);
+}
+
+.slider-points-four {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.slider-points span {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #a9bac7;
+}
+
+.slider-control output {
+  min-height: 24px;
+  margin-top: 11px;
+  color: var(--accent-dark);
+  font-size: 0.82rem;
+  font-weight: 780;
+  text-align: center;
+}
+
 .segmented label {
   position: relative;
   cursor: pointer;
@@ -660,6 +741,50 @@ textarea {
   line-height: 1.55;
   outline: 0;
   transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.contact-field {
+  margin-top: 20px;
+}
+
+.contact-field > span:first-child small {
+  color: #74899c;
+  font-size: 0.75rem;
+  font-weight: 550;
+}
+
+.contact-input {
+  display: flex;
+  min-height: 50px;
+  align-items: center;
+  overflow: hidden;
+  border: 1px solid var(--line-strong);
+  border-radius: 13px;
+  background: #fff;
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.contact-input:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px rgba(15, 118, 110, 0.11);
+}
+
+.contact-input svg {
+  width: 18px;
+  margin-left: 15px;
+  fill: var(--accent);
+}
+
+.contact-input input {
+  width: 100%;
+  min-width: 0;
+  height: 48px;
+  padding: 0 14px 0 10px;
+  border: 0;
+  outline: 0;
+  color: var(--ink);
+  background: transparent;
+  font-weight: 680;
 }
 
 .character-count {
@@ -1130,6 +1255,42 @@ textarea {
   font-weight: 800;
 }
 
+.card-actions {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.whatsapp-link {
+  display: inline-flex;
+  min-height: 31px;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 9px;
+  border-radius: 9px;
+  color: #087b50;
+  background: #e7f8ef;
+  font-size: 0.7rem;
+  font-weight: 760;
+  text-decoration: none;
+  transition: color 160ms ease, background 160ms ease, transform 160ms ease;
+}
+
+.whatsapp-link:hover {
+  color: #05613f;
+  background: #d6f3e4;
+  transform: translateY(-1px);
+}
+
+.whatsapp-link svg {
+  width: 15px;
+  fill: currentColor;
+}
+
+.whatsapp-link[hidden] {
+  display: none;
+}
+
 .delete-button {
   display: inline-flex;
   align-items: center;
@@ -1292,15 +1453,6 @@ textarea {
     min-height: 66px;
   }
 
-  .segmented-five,
-  .segmented-four {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .segmented-five label:last-child {
-    grid-column: 1 / -1;
-  }
-
   .segmented span {
     min-height: 56px;
     font-size: 0.75rem;
@@ -1374,6 +1526,17 @@ textarea {
 
   .delete-button {
     margin-left: auto;
+  }
+
+  .card-actions {
+    margin-left: auto;
+  }
+
+  .whatsapp-link {
+    width: 31px;
+    justify-content: center;
+    padding: 6px;
+    font-size: 0;
   }
 }
 

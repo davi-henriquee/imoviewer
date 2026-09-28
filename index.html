@@ -169,51 +169,43 @@
                 </div>
               </div>
 
-              <fieldset class="choice-group">
+              <fieldset class="choice-group slider-group">
                 <legend>Localização</legend>
-                <div class="segmented segmented-five">
-                  <label>
-                    <input type="radio" name="location" value="0" />
-                    <span>Muito mal<br />localizado</span>
-                  </label>
-                  <label>
-                    <input type="radio" name="location" value="25" />
-                    <span>Mal<br />localizado</span>
-                  </label>
-                  <label>
-                    <input type="radio" name="location" value="50" checked />
-                    <span>Localização<br />ok</span>
-                  </label>
-                  <label>
-                    <input type="radio" name="location" value="75" />
-                    <span>Bem<br />localizado</span>
-                  </label>
-                  <label>
-                    <input type="radio" name="location" value="100" />
-                    <span>Localização<br />privilegiada</span>
-                  </label>
+                <div class="slider-control">
+                  <input
+                    id="locationSlider"
+                    name="location"
+                    type="range"
+                    min="0"
+                    max="4"
+                    step="1"
+                    value="2"
+                    aria-describedby="locationSelection"
+                  />
+                  <div class="slider-points slider-points-five" aria-hidden="true">
+                    <span></span><span></span><span></span><span></span><span></span>
+                  </div>
+                  <output id="locationSelection" for="locationSlider">Localização ok</output>
                 </div>
               </fieldset>
 
-              <fieldset class="choice-group">
+              <fieldset class="choice-group slider-group">
                 <legend>Mobília</legend>
-                <div class="segmented segmented-four">
-                  <label>
-                    <input type="radio" name="furniture" value="0" checked />
-                    <span>Sem nenhuma<br />mobília</span>
-                  </label>
-                  <label>
-                    <input type="radio" name="furniture" value="25" />
-                    <span>Pouquíssima<br />mobília</span>
-                  </label>
-                  <label>
-                    <input type="radio" name="furniture" value="50" />
-                    <span>Bem<br />mobiliado</span>
-                  </label>
-                  <label>
-                    <input type="radio" name="furniture" value="100" />
-                    <span>Completamente<br />mobiliado</span>
-                  </label>
+                <div class="slider-control">
+                  <input
+                    id="furnitureSlider"
+                    name="furniture"
+                    type="range"
+                    min="0"
+                    max="3"
+                    step="1"
+                    value="0"
+                    aria-describedby="furnitureSelection"
+                  />
+                  <div class="slider-points slider-points-four" aria-hidden="true">
+                    <span></span><span></span><span></span><span></span>
+                  </div>
+                  <output id="furnitureSelection" for="furnitureSlider">Sem nenhuma mobília</output>
                 </div>
               </fieldset>
 
@@ -280,6 +272,24 @@
                   required
                 ></textarea>
                 <small class="character-count"><span id="descriptionCount">0</span>/500</small>
+              </label>
+
+              <label class="field contact-field">
+                <span>Contato da imobiliária <small>(opcional)</small></span>
+                <span class="contact-input">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M6.6 10.8c1.4 2.8 3.7 5 6.5 6.5l2.2-2.2c.3-.3.7-.4 1.1-.2 1.2.4 2.5.7 3.8.7.5 0 .8.4.8.8V20a1 1 0 0 1-1 1C10.6 21 3 13.4 3 4a1 1 0 0 1 1-1h3.5c.5 0 .8.4.8.8 0 1.3.2 2.6.7 3.8.1.4 0 .8-.2 1.1l-2.2 2.1Z" />
+                  </svg>
+                  <input
+                    id="agencyContact"
+                    name="agencyContact"
+                    type="tel"
+                    inputmode="tel"
+                    autocomplete="tel"
+                    maxlength="20"
+                    placeholder="(11) 99999-9999"
+                  />
+                </span>
               </label>
 
               <div class="photo-field">
@@ -401,12 +411,20 @@
           <div class="property-details"></div>
           <div class="card-footer">
             <span class="score-label"></span>
-            <button class="delete-button" type="button" aria-label="Excluir imóvel">
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M7 21a2 2 0 0 1-2-2V6h14v13a2 2 0 0 1-2 2H7ZM4 6V4h5V3h6v1h5v2H4Zm3 2v11h10V8H7Zm2 9h2V10H9v7Zm4 0h2V10h-2v7Z" />
-              </svg>
-              Excluir
-            </button>
+            <div class="card-actions">
+              <a class="whatsapp-link" href="#" target="_blank" rel="noopener noreferrer" hidden>
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M12 2a10 10 0 0 0-8.7 14.9L2 22l5.2-1.3A10 10 0 1 0 12 2Zm0 18.2a8.2 8.2 0 0 1-4.2-1.1l-.3-.2-3.1.8.8-3-.2-.3A8.2 8.2 0 1 1 12 20.2Zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.8 6.8 0 0 1-2-1.2 7.5 7.5 0 0 1-1.4-1.8c-.1-.2 0-.4.1-.5l.4-.5.3-.5c.1-.2 0-.4 0-.5l-.8-1.9c-.2-.5-.4-.4-.6-.4h-.5c-.2 0-.5.1-.7.3-.3.3-1 1-1 2.4s1 2.8 1.2 3c.1.2 2 3.1 5 4.3.7.3 1.2.5 1.7.6.7.2 1.3.2 1.8.1.6-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.2-1.2-.1-.2-.3-.3-.5-.4Z" />
+                </svg>
+                WhatsApp
+              </a>
+              <button class="delete-button" type="button" aria-label="Excluir imóvel">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M7 21a2 2 0 0 1-2-2V6h14v13a2 2 0 0 1-2 2H7ZM4 6V4h5V3h6v1h5v2H4Zm3 2v11h10V8H7Zm2 9h2V10H9v7Zm4 0h2V10h-2v7Z" />
+                </svg>
+                Excluir
+              </button>
+            </div>
           </div>
         </div>
       </article>
