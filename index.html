@@ -172,40 +172,89 @@
               <fieldset class="choice-group slider-group">
                 <legend>Localização</legend>
                 <div class="slider-control">
-                  <input
-                    id="locationSlider"
-                    name="location"
-                    type="range"
-                    min="0"
-                    max="4"
-                    step="1"
-                    value="2"
-                    aria-describedby="locationSelection"
-                  />
-                  <div class="slider-points slider-points-five" aria-hidden="true">
-                    <span></span><span></span><span></span><span></span><span></span>
+                  <div class="slider-track">
+                    <div class="slider-ticks" aria-hidden="true">
+                      <span></span><span></span><span></span><span></span><span></span>
+                    </div>
+                    <input
+                      id="locationSlider"
+                      name="location"
+                      type="range"
+                      min="0"
+                      max="4"
+                      step="1"
+                      value="2"
+                      aria-describedby="locationSelection"
+                    />
                   </div>
-                  <output id="locationSelection" for="locationSlider">Localização ok</output>
+                  <div class="slider-options slider-options-five">
+                    <button type="button" data-slider="locationSlider" data-value="0" style="--step: 0%">
+                      Muito mal<br />localizado
+                    </button>
+                    <button type="button" data-slider="locationSlider" data-value="1" style="--step: 25%">
+                      Mal<br />localizado
+                    </button>
+                    <button type="button" data-slider="locationSlider" data-value="2" style="--step: 50%">
+                      Localização<br />ok
+                    </button>
+                    <button type="button" data-slider="locationSlider" data-value="3" style="--step: 75%">
+                      Bem<br />localizado
+                    </button>
+                    <button type="button" data-slider="locationSlider" data-value="4" style="--step: 100%">
+                      Localização<br />privilegiada
+                    </button>
+                  </div>
+                  <output class="visually-hidden" id="locationSelection" for="locationSlider">
+                    Localização ok
+                  </output>
                 </div>
               </fieldset>
 
               <fieldset class="choice-group slider-group">
                 <legend>Mobília</legend>
                 <div class="slider-control">
-                  <input
-                    id="furnitureSlider"
-                    name="furniture"
-                    type="range"
-                    min="0"
-                    max="3"
-                    step="1"
-                    value="0"
-                    aria-describedby="furnitureSelection"
-                  />
-                  <div class="slider-points slider-points-four" aria-hidden="true">
-                    <span></span><span></span><span></span><span></span>
+                  <div class="slider-track">
+                    <div class="slider-ticks" aria-hidden="true">
+                      <span></span><span></span><span></span><span></span>
+                    </div>
+                    <input
+                      id="furnitureSlider"
+                      name="furniture"
+                      type="range"
+                      min="0"
+                      max="3"
+                      step="1"
+                      value="0"
+                      aria-describedby="furnitureSelection"
+                    />
                   </div>
-                  <output id="furnitureSelection" for="furnitureSlider">Sem nenhuma mobília</output>
+                  <div class="slider-options slider-options-four">
+                    <button type="button" data-slider="furnitureSlider" data-value="0" style="--step: 0%">
+                      Sem nenhuma<br />mobília
+                    </button>
+                    <button
+                      type="button"
+                      data-slider="furnitureSlider"
+                      data-value="1"
+                      style="--step: 33.333%"
+                    >
+                      Pouquíssima<br />mobília
+                    </button>
+                    <button
+                      type="button"
+                      data-slider="furnitureSlider"
+                      data-value="2"
+                      style="--step: 66.667%"
+                    >
+                      Bem<br />mobiliado
+                    </button>
+                    <button type="button" data-slider="furnitureSlider" data-value="3" style="--step: 100%">
+                      Completamente<br />mobiliado
+                    </button>
+                  </div>
+                  <output class="visually-hidden" id="furnitureSelection" for="furnitureSlider">
+                    Sem nenhuma mobília
+                  </output>
                 </div>
               </fieldset>
 

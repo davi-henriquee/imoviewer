@@ -124,6 +124,11 @@ function updateSlider(input, output, labels) {
   output.textContent = labels[index];
   input.setAttribute("aria-valuetext", labels[index]);
   input.style.setProperty("--range-progress", `${progress}%`);
+  document.querySelectorAll(`[data-slider="${input.id}"]`).forEach((option) => {
+    const selected = Number(option.dataset.value) === index;
+    option.classList.toggle("is-selected", selected);
+    option.setAttribute("aria-pressed", String(selected));
+  });
 }
 
 function updateSliders() {
@@ -806,6 +811,15 @@ form.addEventListener("input", () => {
 
 form.addEventListener("change", updateLiveScore);
 form.addEventListener("submit", handleSubmit);
+document.querySelectorAll("[data-slider]").forEach((option) => {
+  option.addEventListener("click", () => {
+    const slider = document.getElementById(option.dataset.slider);
+    if (!slider) return;
+    slider.value = option.dataset.value;
+    slider.dispatchEvent(new Event("input", { bubbles: true }));
+    slider.focus();
+  });
+});
 loginForm.addEventListener("submit", handleLogin);
 loginPassword.addEventListener("input", () => {
   loginError.hidden = true;
