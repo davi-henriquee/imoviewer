@@ -1,0 +1,405 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Cadastro e comparação de imóveis com pontuação automática."
+    />
+    <meta name="theme-color" content="#102a43" />
+    <link
+      rel="icon"
+      type="image/svg+xml"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23102a43'/%3E%3Cpath d='M14 31 32 16l18 15v19H37V38H27v12H14Z' fill='%23fff'/%3E%3Cpath d='m41 18 8 7v-9h-8Z' fill='%2334d399'/%3E%3C/svg%3E"
+    />
+    <title>Imoviewer</title>
+    <link rel="stylesheet" href="styles.css" />
+    <script src="app.js" defer></script>
+  </head>
+  <body class="is-locked">
+    <div class="login-screen" id="loginScreen" role="dialog" aria-modal="true" aria-labelledby="loginTitle">
+      <form class="login-card" id="loginForm" novalidate>
+        <span class="login-mark" aria-hidden="true">
+          <svg viewBox="0 0 32 32">
+            <path d="M5 15.5 16 6l11 9.5V27h-8v-7h-6v7H5Z" />
+          </svg>
+        </span>
+        <p class="login-brand">Imoviewer</p>
+        <h1 id="loginTitle">Acesse seus imóveis</h1>
+        <label class="login-field">
+          <span>Senha</span>
+          <input
+            id="loginPassword"
+            type="password"
+            inputmode="numeric"
+            autocomplete="current-password"
+            maxlength="4"
+            required
+          />
+        </label>
+        <p class="login-error" id="loginError" role="alert" hidden>Senha incorreta.</p>
+        <button class="login-button" type="submit">Entrar</button>
+      </form>
+    </div>
+
+    <header class="topbar">
+      <a class="brand" href="#inicio" aria-label="Imoviewer — início">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 32 32" role="img">
+            <path d="M5 15.5 16 6l11 9.5V27h-8v-7h-6v7H5Z" />
+          </svg>
+        </span>
+        <span>Imoviewer</span>
+      </a>
+      <div class="header-actions">
+        <button class="utility-button" id="exportButton" type="button">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M11 3h2v10.2l3.6-3.6L18 11l-6 6-6-6 1.4-1.4 3.6 3.6V3Zm-6 16h14v2H5v-2Z" />
+          </svg>
+          <span>Exportar</span>
+        </button>
+        <button class="utility-button" id="importButton" type="button">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M11 21h2V10.8l3.6 3.6L18 13l-6-6-6 6 1.4 1.4 3.6-3.6V21ZM5 3h14v2H5V3Z" />
+          </svg>
+          <span>Importar</span>
+        </button>
+        <input id="importInput" type="file" accept=".json,application/json" hidden />
+        <a class="saved-count" href="#lista-imoveis">
+          <span id="savedCount">0</span>
+          <span id="savedCountLabel">imóveis salvos</span>
+        </a>
+      </div>
+    </header>
+
+    <main id="inicio" class="page-shell">
+      <section class="workspace" aria-labelledby="pageTitle">
+        <div class="intro-row">
+          <h1 id="pageTitle">Encontre o imóvel que mais combina com você.</h1>
+        </div>
+
+        <div class="form-layout">
+          <form id="propertyForm" class="property-form" novalidate>
+            <div class="form-section form-section-main">
+              <div class="section-heading">
+                <span class="section-number">01</span>
+                <div>
+                  <h2>Informações principais</h2>
+                </div>
+              </div>
+
+              <div class="field-grid">
+                <label class="field">
+                  <span>Valor do imóvel</span>
+                  <span class="money-input">
+                    <span aria-hidden="true">R$</span>
+                    <input
+                      id="propertyValue"
+                      name="propertyValue"
+                      type="number"
+                      inputmode="decimal"
+                      min="0"
+                      step="0.01"
+                      placeholder="1.650,00"
+                      required
+                    />
+                  </span>
+                </label>
+
+                <label class="field">
+                  <span>Valor do condomínio</span>
+                  <span class="money-input">
+                    <span aria-hidden="true">R$</span>
+                    <input
+                      id="condoValue"
+                      name="condoValue"
+                      type="number"
+                      inputmode="decimal"
+                      min="0"
+                      step="0.01"
+                      placeholder="250,00"
+                      required
+                    />
+                  </span>
+                </label>
+
+                <label class="field">
+                  <span>Tamanho do imóvel</span>
+                  <span class="unit-input">
+                    <input
+                      id="propertySize"
+                      name="propertySize"
+                      type="number"
+                      inputmode="decimal"
+                      min="0"
+                      step="0.1"
+                      placeholder="48"
+                      required
+                    />
+                    <span aria-hidden="true">m²</span>
+                  </span>
+                </label>
+
+                <label class="check-card water-check" for="waterIncluded">
+                  <input id="waterIncluded" name="waterIncluded" type="checkbox" />
+                  <span class="custom-check" aria-hidden="true"></span>
+                  <span>
+                    <strong>Água inclusa</strong>
+                  </span>
+                </label>
+              </div>
+            </div>
+
+            <div class="form-section">
+              <div class="section-heading">
+                <span class="section-number">02</span>
+                <div>
+                  <h2>Características</h2>
+                </div>
+              </div>
+
+              <fieldset class="choice-group">
+                <legend>Localização</legend>
+                <div class="segmented segmented-five">
+                  <label>
+                    <input type="radio" name="location" value="0" />
+                    <span>Muito mal<br />localizado</span>
+                  </label>
+                  <label>
+                    <input type="radio" name="location" value="25" />
+                    <span>Mal<br />localizado</span>
+                  </label>
+                  <label>
+                    <input type="radio" name="location" value="50" checked />
+                    <span>Localização<br />ok</span>
+                  </label>
+                  <label>
+                    <input type="radio" name="location" value="75" />
+                    <span>Bem<br />localizado</span>
+                  </label>
+                  <label>
+                    <input type="radio" name="location" value="100" />
+                    <span>Localização<br />privilegiada</span>
+                  </label>
+                </div>
+              </fieldset>
+
+              <fieldset class="choice-group">
+                <legend>Mobília</legend>
+                <div class="segmented segmented-four">
+                  <label>
+                    <input type="radio" name="furniture" value="0" checked />
+                    <span>Sem nenhuma<br />mobília</span>
+                  </label>
+                  <label>
+                    <input type="radio" name="furniture" value="25" />
+                    <span>Pouquíssima<br />mobília</span>
+                  </label>
+                  <label>
+                    <input type="radio" name="furniture" value="50" />
+                    <span>Bem<br />mobiliado</span>
+                  </label>
+                  <label>
+                    <input type="radio" name="furniture" value="100" />
+                    <span>Completamente<br />mobiliado</span>
+                  </label>
+                </div>
+              </fieldset>
+
+              <fieldset class="choice-group">
+                <legend>Vaga de garagem</legend>
+                <div class="segmented segmented-three">
+                  <label>
+                    <input type="radio" name="garage" value="0" checked />
+                    <span>Sem vaga<br /><em>0 pts</em></span>
+                  </label>
+                  <label>
+                    <input type="radio" name="garage" value="100" />
+                    <span>1 vaga<br /><em>100 pts</em></span>
+                  </label>
+                  <label>
+                    <input type="radio" name="garage" value="200" />
+                    <span>2 vagas<br /><em>200 pts</em></span>
+                  </label>
+                </div>
+              </fieldset>
+
+              <fieldset class="choice-group extras-group">
+                <legend>Extras <small>+5 pontos cada</small></legend>
+                <div class="extras-grid">
+                  <label class="check-card" for="barbecue">
+                    <input id="barbecue" name="barbecue" type="checkbox" />
+                    <span class="custom-check" aria-hidden="true"></span>
+                    <span>Churrasqueira</span>
+                  </label>
+                  <label class="check-card" for="balcony">
+                    <input id="balcony" name="balcony" type="checkbox" />
+                    <span class="custom-check" aria-hidden="true"></span>
+                    <span>Sacada</span>
+                  </label>
+                  <label class="check-card" for="elevator">
+                    <input id="elevator" name="elevator" type="checkbox" />
+                    <span class="custom-check" aria-hidden="true"></span>
+                    <span>Elevador</span>
+                  </label>
+                </div>
+              </fieldset>
+            </div>
+
+            <div class="form-section">
+              <div class="section-heading">
+                <span class="section-number">03</span>
+                <div>
+                  <h2>Detalhes do imóvel</h2>
+                </div>
+              </div>
+
+              <label class="field description-field">
+                <span>Descrição</span>
+                <textarea
+                  id="description"
+                  name="description"
+                  rows="4"
+                  maxlength="500"
+                  placeholder="Ex.: Apartamento ensolarado perto do trabalho, com mercado na esquina..."
+                  required
+                ></textarea>
+                <small class="character-count"><span id="descriptionCount">0</span>/500</small>
+              </label>
+
+              <div class="photo-field">
+                <span class="field-label">Foto do imóvel</span>
+                <label class="photo-dropzone" for="propertyPhoto">
+                  <input
+                    id="propertyPhoto"
+                    name="propertyPhoto"
+                    type="file"
+                    accept="image/*"
+                  />
+                  <span class="photo-placeholder" id="photoPlaceholder">
+                    <span class="photo-icon" aria-hidden="true">
+                      <svg viewBox="0 0 24 24">
+                        <path d="M4 5h3l1.5-2h7L17 5h3a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Zm8 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10Zm0-2.2a2.8 2.8 0 1 1 0-5.6 2.8 2.8 0 0 1 0 5.6Z" />
+                      </svg>
+                    </span>
+                    <strong>Escolher uma foto</strong>
+                    <small>JPG, PNG ou WEBP</small>
+                  </span>
+                  <img id="photoPreview" alt="Prévia da foto selecionada" hidden />
+                  <span class="change-photo" id="changePhoto" hidden>Trocar foto</span>
+                </label>
+              </div>
+            </div>
+
+            <p class="form-error" id="formError" role="alert" hidden></p>
+
+            <button class="save-button" id="saveButton" type="submit">
+              <span>Salvar imóvel</span>
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="m13.2 5.2 6.8 6.8-6.8 6.8-1.4-1.4 4.4-4.4H4v-2h12.2l-4.4-4.4Z" />
+              </svg>
+            </button>
+          </form>
+
+          <aside class="score-panel" aria-labelledby="scoreTitle">
+            <div class="score-panel-inner">
+              <p class="eyebrow score-eyebrow">Nota estimada</p>
+              <div class="score-orb" id="scoreOrb">
+                <span id="liveScore" aria-live="polite">—</span>
+                <small>/100</small>
+              </div>
+              <h2 id="scoreTitle">Preencha os valores</h2>
+              <p id="scoreMessage">
+                Informe valor, condomínio e tamanho para ver a pontuação.
+              </p>
+
+              <div class="score-breakdown" id="scoreBreakdown" aria-label="Detalhamento da nota">
+                <div>
+                  <span>Imóvel</span>
+                  <strong id="valuePoints">—</strong>
+                </div>
+                <div>
+                  <span>Condomínio</span>
+                  <strong id="condoPoints">—</strong>
+                </div>
+                <div>
+                  <span>Tamanho</span>
+                  <strong id="sizePoints">—</strong>
+                </div>
+                <div>
+                  <span>Localização</span>
+                  <strong id="locationPoints">50</strong>
+                </div>
+                <div>
+                  <span>Mobília</span>
+                  <strong id="furniturePoints">0</strong>
+                </div>
+                <div>
+                  <span>Garagem</span>
+                  <strong id="garagePoints">0</strong>
+                </div>
+                <div class="bonus-row">
+                  <span>Bônus</span>
+                  <strong id="bonusPoints">+0</strong>
+                </div>
+              </div>
+
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <section id="lista-imoveis" class="properties-section" aria-labelledby="propertiesTitle">
+        <div class="list-heading">
+          <h2 id="propertiesTitle">Imóveis cadastrados</h2>
+        </div>
+
+        <div id="emptyState" class="empty-state">
+          <span class="empty-icon" aria-hidden="true">
+            <svg viewBox="0 0 32 32">
+              <path d="M5 15.5 16 6l11 9.5V27h-8v-7h-6v7H5Z" />
+            </svg>
+          </span>
+          <h3>Nenhum imóvel por aqui ainda</h3>
+          <p>Seu primeiro cadastro aparecerá nesta lista.</p>
+        </div>
+
+        <div id="propertyList" class="property-list" aria-live="polite"></div>
+      </section>
+    </main>
+
+    <template id="propertyCardTemplate">
+      <article class="property-card">
+        <div class="property-image-wrap">
+          <img class="property-image" alt="" />
+          <div class="property-image-fallback" aria-hidden="true">
+            <svg viewBox="0 0 32 32">
+              <path d="M5 15.5 16 6l11 9.5V27h-8v-7h-6v7H5Z" />
+            </svg>
+          </div>
+          <span class="card-score"><strong></strong><small>/100</small></span>
+        </div>
+        <div class="property-content">
+          <div class="card-topline">
+            <span class="property-meta"></span>
+            <span class="property-price"></span>
+          </div>
+          <p class="property-description"></p>
+          <div class="property-details"></div>
+          <div class="card-footer">
+            <span class="score-label"></span>
+            <button class="delete-button" type="button" aria-label="Excluir imóvel">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M7 21a2 2 0 0 1-2-2V6h14v13a2 2 0 0 1-2 2H7ZM4 6V4h5V3h6v1h5v2H4Zm3 2v11h10V8H7Zm2 9h2V10H9v7Zm4 0h2V10h-2v7Z" />
+              </svg>
+              Excluir
+            </button>
+          </div>
+        </div>
+      </article>
+    </template>
+
+    <div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
+  </body>
+</html>
