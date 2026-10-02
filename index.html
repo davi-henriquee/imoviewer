@@ -14,8 +14,8 @@
       href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23102a43'/%3E%3Cpath d='M14 31 32 16l18 15v19H37V38H27v12H14Z' fill='%23fff'/%3E%3Cpath d='m41 18 8 7v-9h-8Z' fill='%2334d399'/%3E%3C/svg%3E"
     />
     <title>Imoviewer</title>
-    <link rel="stylesheet" href="styles.css?v=20260928.3" />
-    <script src="app.js?v=20260928.3" defer></script>
+    <link rel="stylesheet" href="styles.css?v=20261001.1" />
+    <script src="app.js?v=20261001.1" defer></script>
   </head>
   <body class="is-locked">
     <div class="login-screen" id="loginScreen" role="dialog" aria-modal="true" aria-labelledby="loginTitle">
@@ -174,38 +174,29 @@
                 <div class="slider-control">
                   <div class="slider-track">
                     <div class="slider-ticks" aria-hidden="true">
-                      <span></span><span></span><span></span><span></span><span></span>
+                      <span></span><span></span>
                     </div>
                     <input
                       id="locationSlider"
                       name="location"
                       type="range"
                       min="0"
-                      max="4"
+                      max="1"
                       step="1"
-                      value="2"
+                      value="0"
                       aria-describedby="locationSelection"
                     />
                   </div>
-                  <div class="slider-options slider-options-five">
+                  <div class="slider-options slider-options-two">
                     <button type="button" data-slider="locationSlider" data-value="0" style="--step: 0%">
-                      Muito mal<br />localizado
+                      Boa localização<small>5%</small>
                     </button>
-                    <button type="button" data-slider="locationSlider" data-value="1" style="--step: 25%">
-                      Mal<br />localizado
-                    </button>
-                    <button type="button" data-slider="locationSlider" data-value="2" style="--step: 50%">
-                      Localização<br />ok
-                    </button>
-                    <button type="button" data-slider="locationSlider" data-value="3" style="--step: 75%">
-                      Bem<br />localizado
-                    </button>
-                    <button type="button" data-slider="locationSlider" data-value="4" style="--step: 100%">
-                      Localização<br />privilegiada
+                    <button type="button" data-slider="locationSlider" data-value="1" style="--step: 100%">
+                      Ótima localização<small>10%</small>
                     </button>
                   </div>
                   <output class="visually-hidden" id="locationSelection" for="locationSlider">
-                    Localização ok
+                    Boa localização
                   </output>
                 </div>
               </fieldset>
@@ -230,7 +221,7 @@
                   </div>
                   <div class="slider-options slider-options-four">
                     <button type="button" data-slider="furnitureSlider" data-value="0" style="--step: 0%">
-                      Sem nenhuma<br />mobília
+                      Sem nenhuma<br />mobília<small>0%</small>
                     </button>
                     <button
                       type="button"
@@ -238,7 +229,7 @@
                       data-value="1"
                       style="--step: 33.333%"
                     >
-                      Pouquíssima<br />mobília
+                      Pouquíssima<br />mobília<small>5%</small>
                     </button>
                     <button
                       type="button"
@@ -246,10 +237,10 @@
                       data-value="2"
                       style="--step: 66.667%"
                     >
-                      Bem<br />mobiliado
+                      Bem<br />mobiliado<small>10%</small>
                     </button>
                     <button type="button" data-slider="furnitureSlider" data-value="3" style="--step: 100%">
-                      Completamente<br />mobiliado
+                      Completamente<br />mobiliado<small>15%</small>
                     </button>
                   </div>
                   <output class="visually-hidden" id="furnitureSelection" for="furnitureSlider">
@@ -277,7 +268,7 @@
               </fieldset>
 
               <fieldset class="choice-group extras-group">
-                <legend>Extras <small>até 5 pontos no total</small></legend>
+                <legend>Extras <small>+4% cada · até 12%</small></legend>
                 <div class="extras-grid">
                   <label class="check-card" for="barbecue">
                     <input id="barbecue" name="barbecue" type="checkbox" />
@@ -392,27 +383,23 @@
 
               <div class="score-breakdown" id="scoreBreakdown" aria-label="Detalhamento da nota">
                 <div>
-                  <span>Aluguel · 30%</span>
-                  <strong id="valuePoints">—</strong>
+                  <span>Aluguel + condomínio · 40%</span>
+                  <strong id="costPoints">—</strong>
                 </div>
                 <div>
-                  <span>Condomínio · 15%</span>
-                  <strong id="condoPoints">—</strong>
+                  <span>Tamanho · 35%</span>
+                  <strong id="sizePoints">—</strong>
                 </div>
                 <div>
-                  <span>Mobília · 20%</span>
+                  <span>Mobília · 15%</span>
                   <strong id="furniturePoints">—</strong>
                 </div>
                 <div>
-                  <span>Localização · 20%</span>
+                  <span>Localização · 10%</span>
                   <strong id="locationPoints">—</strong>
                 </div>
-                <div>
-                  <span>Tamanho · 10%</span>
-                  <strong id="sizePoints">—</strong>
-                </div>
                 <div class="bonus-row">
-                  <span>Extras · 5%</span>
+                  <span>Extras · até +12%</span>
                   <strong id="bonusPoints">—</strong>
                 </div>
                 <div class="requirement-row">
@@ -420,7 +407,7 @@
                   <strong id="garagePoints">Não atende</strong>
                 </div>
                 <div class="requirement-row">
-                  <span>Aluguel até R$ 2.000</span>
+                  <span>Custo até R$ 2.500</span>
                   <strong id="budgetPoints">—</strong>
                 </div>
               </div>
@@ -518,14 +505,13 @@
         <p class="overview-range" id="overviewRange"></p>
 
         <div class="overview-breakdown" aria-label="Detalhamento da pontuação do imóvel">
-          <div><span>Aluguel · 30%</span><strong id="overviewValuePoints"></strong></div>
-          <div><span>Condomínio · 15%</span><strong id="overviewCondoPoints"></strong></div>
-          <div><span>Mobília · 20%</span><strong id="overviewFurniturePoints"></strong></div>
-          <div><span>Localização · 20%</span><strong id="overviewLocationPoints"></strong></div>
-          <div><span>Tamanho · 10%</span><strong id="overviewSizePoints"></strong></div>
-          <div class="bonus-row"><span>Extras · 5%</span><strong id="overviewBonusPoints"></strong></div>
+          <div><span>Aluguel + condomínio · 40%</span><strong id="overviewCostPoints"></strong></div>
+          <div><span>Tamanho · 35%</span><strong id="overviewSizePoints"></strong></div>
+          <div><span>Mobília · 15%</span><strong id="overviewFurniturePoints"></strong></div>
+          <div><span>Localização · 10%</span><strong id="overviewLocationPoints"></strong></div>
+          <div class="bonus-row"><span>Extras · até +12%</span><strong id="overviewBonusPoints"></strong></div>
           <div class="requirement-row"><span>Garagem obrigatória</span><strong id="overviewGaragePoints"></strong></div>
-          <div class="requirement-row"><span>Aluguel até R$ 2.000</span><strong id="overviewBudgetPoints"></strong></div>
+          <div class="requirement-row"><span>Custo até R$ 2.500</span><strong id="overviewBudgetPoints"></strong></div>
         </div>
       </div>
     </dialog>

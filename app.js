@@ -5,24 +5,18 @@ const ACCESS_SESSION_KEY = "imoviewer:access-granted";
 const ACCESS_PASSWORD = "2007";
 const BACKUP_FORMAT = "imoviewer-backup";
 const BACKUP_FILE_NAME = "imoviewer.json";
-const RENT_FULL_SCORE_AT = 1400;
-const RENT_LIMIT = 2000;
+const COST_FULL_SCORE_AT = 1700;
+const COST_ZERO_SCORE_AT = 2500;
+const COST_LIMIT = 2500;
 const SCORE_WEIGHTS = {
-  value: 30,
-  condo: 15,
-  size: 10,
-  location: 20,
-  furniture: 20,
-  extras: 5,
+  cost: 40,
+  size: 35,
+  location: 10,
+  furniture: 15,
 };
-const LOCATION_SCORES = [0, 25, 50, 75, 100];
-const LOCATION_LABELS = [
-  "Muito mal localizado",
-  "Mal localizado",
-  "Localização ok",
-  "Bem localizado",
-  "Localização privilegiada",
-];
+const EXTRA_POINTS_PER_ITEM = 4;
+const LOCATION_SCORES = [50, 100];
+const LOCATION_LABELS = ["Boa localização", "Ótima localização"];
 const FURNITURE_SCORES = [0, 25, 50, 100];
 const FURNITURE_LABELS = [
   "Sem nenhuma mobília",
@@ -40,7 +34,7 @@ const SCORE_CATEGORIES = [
 ];
 const INELIGIBLE_CATEGORY = {
   key: "ineligible",
-  range: "Sem vaga ou acima de R$ 2.000",
+  range: "Sem vaga ou custo acima de R$ 2.500",
   label: "Não atende aos requisitos",
 };
 
@@ -90,8 +84,7 @@ const overviewDescription = document.querySelector("#overviewDescription");
 const overviewPrice = document.querySelector("#overviewPrice");
 
 const overviewPointsElements = {
-  value: document.querySelector("#overviewValuePoints"),
-  condo: document.querySelector("#overviewCondoPoints"),
+  cost: document.querySelector("#overviewCostPoints"),
   size: document.querySelector("#overviewSizePoints"),
   location: document.querySelector("#overviewLocationPoints"),
   furniture: document.querySelector("#overviewFurniturePoints"),
@@ -101,8 +94,7 @@ const overviewPointsElements = {
 };
 
 const pointsElements = {
-  value: document.querySelector("#valuePoints"),
-  condo: document.querySelector("#condoPoints"),
+  cost: document.querySelector("#costPoints"),
   size: document.querySelector("#sizePoints"),
   location: document.querySelector("#locationPoints"),
   furniture: document.querySelector("#furniturePoints"),
@@ -148,18 +140,22 @@ function scoreLowerIsBetter(value, fullScoreAt, zeroScoreAt) {
   return ((zeroScoreAt - value) / (zeroScoreAt - fullScoreAt)) * 100;
 }
 
-function scoreRent(value) {
-  if (!Number.isFinite(value)) return null;
-  if (value <= RENT_FULL_SCORE_AT) return 100;
-  if (value > RENT_LIMIT) return 0;
-  return 100 - ((value - RENT_FULL_SCORE_AT) / (RENT_LIMIT - RENT_FULL_SCORE_AT)) * 60;
-}
-
 function scoreHigherIsBetter(value, zeroScoreAt, fullScoreAt) {
   if (!Number.isFinite(value)) return null;
   if (value <= zeroScoreAt) return 0;
   if (value >= fullScoreAt) return 100;
   return ((value - zeroScoreAt) / (fullScoreAt - zeroScoreAt)) * 100;
+}
+
+function normalizeLocationScore(value) {
+  const numericValue = Number(value);
+  if (!Number.isFinite(numericValue)) return null;
+  return numericValue >= 75 ? 100 : 50;
+}
+
+function furniturePoints(value) {
+  const pointsByValue = { 0: 0, 25: 5, 50: 10, 100: 15 };
+  return pointsByValue[Number(value)] ?? null;
 }
 
 function getCheckedNumber(name) {
@@ -217,22 +213,27 @@ function getExtraNames(source = form.elements) {
 
 function calculateScore(data) {
   const effectiveCondo = Math.max(0, data.condoValue - (data.waterIncluded ? 100 : 0));
-  const valueScore = scoreRent(data.propertyValue);
-  const condoScore = scoreLowerIsBetter(effectiveCondo, 150, 400);
-  const sizeScore = scoreHigherIsBetter(data.propertySize, 15, 70);
+  const totalCost =
+    Number.isFinite(data.propertyValue) && Number.isFinite(effectiveCondo)
+      ? data.propertyValue + effectiveCondo
+      : Number.NaN;
+  const costScore = scoreLowerIsBetter(totalCost, COST_FULL_SCORE_AT, COST_ZERO_SCORE_AT);
+  const sizeScore = scoreHigherIsBetter(data.propertySize, 30, 90);
+  const normalizedLocation = normalizeLocationScore(data.location);
+  const locationPoints = normalizedLocation === 100 ? 10 : normalizedLocation === 50 ? 5 : null;
+  const furnitureContribution = furniturePoints(data.furniture);
   const extraCount = Array.isArray(data.extras) ? data.extras.length : 0;
   const hasGarage = Number(data.garage) >= 100;
-  const withinBudget = Number.isFinite(data.propertyValue) ? data.propertyValue <= RENT_LIMIT : null;
-  const scoreParts = [valueScore, condoScore, sizeScore, data.location, data.furniture];
+  const withinBudget = Number.isFinite(totalCost) ? totalCost <= COST_LIMIT : null;
+  const scoreParts = [costScore, sizeScore, locationPoints, furnitureContribution];
   const complete = scoreParts.every(Number.isFinite);
   const contributions = complete
     ? {
-        value: (valueScore / 100) * SCORE_WEIGHTS.value,
-        condo: (condoScore / 100) * SCORE_WEIGHTS.condo,
+        cost: (costScore / 100) * SCORE_WEIGHTS.cost,
         size: (sizeScore / 100) * SCORE_WEIGHTS.size,
-        location: (data.location / 100) * SCORE_WEIGHTS.location,
-        furniture: (data.furniture / 100) * SCORE_WEIGHTS.furniture,
-        extras: (clamp(extraCount, 0, 3) / 3) * SCORE_WEIGHTS.extras,
+        location: locationPoints,
+        furniture: furnitureContribution,
+        extras: clamp(extraCount, 0, 3) * EXTRA_POINTS_PER_ITEM,
       }
     : null;
   const rawScore = complete
@@ -244,8 +245,8 @@ function calculateScore(data) {
   return {
     complete,
     effectiveCondo,
-    valueScore,
-    condoScore,
+    totalCost,
+    costScore,
     sizeScore,
     contributions,
     rawScore,
@@ -259,8 +260,7 @@ function calculateScore(data) {
 function scoreDetailsFromCalculation(calculation) {
   if (!calculation.contributions) return {};
   return {
-    value: roundScore(calculation.contributions.value),
-    condo: roundScore(calculation.contributions.condo),
+    cost: roundScore(calculation.contributions.cost),
     size: roundScore(calculation.contributions.size),
     location: roundScore(calculation.contributions.location),
     furniture: roundScore(calculation.contributions.furniture),
@@ -294,9 +294,9 @@ function scoreColor(score) {
 
 function requirementMessage(calculation) {
   if (!calculation.withinBudget && !calculation.hasGarage) {
-    return "O valor ultrapassa R$ 2.000 e o imóvel não tem vaga de garagem.";
+    return "O custo mensal ultrapassa R$ 2.500 e o imóvel não tem vaga de garagem.";
   }
-  if (!calculation.withinBudget) return "O valor ultrapassa o teto de R$ 2.000.";
+  if (!calculation.withinBudget) return "O custo mensal ultrapassa o teto de R$ 2.500.";
   return "Este imóvel não tem a vaga de garagem necessária.";
 }
 
@@ -348,8 +348,7 @@ function updateLiveScore() {
   const data = readFormData();
   const calculation = calculateScore(data);
 
-  pointsElements.value.textContent = formatPoints(calculation.contributions?.value);
-  pointsElements.condo.textContent = formatPoints(calculation.contributions?.condo);
+  pointsElements.cost.textContent = formatPoints(calculation.contributions?.cost);
   pointsElements.size.textContent = formatPoints(calculation.contributions?.size);
   pointsElements.location.textContent = formatPoints(calculation.contributions?.location);
   pointsElements.furniture.textContent = formatPoints(calculation.contributions?.furniture);
@@ -388,6 +387,7 @@ function loadProperties() {
           .map((property) => {
             const normalizedProperty = {
               ...property,
+              location: normalizeLocationScore(property.location),
               extras: Array.isArray(property.extras) ? property.extras : [],
               photo: typeof property.photo === "string" ? property.photo : "",
               website: normalizeWebsiteUrl(property.website || property.link || ""),
@@ -527,8 +527,7 @@ function openPropertyOverview(property) {
   overviewDialog.style.setProperty("--overview-score-color", color);
   overviewScoreOrb.style.setProperty("--overview-score-color", color);
   overviewScoreOrb.style.setProperty("--overview-score-progress", `${roundedScore}%`);
-  overviewPointsElements.value.textContent = formatPoints(calculation.contributions?.value);
-  overviewPointsElements.condo.textContent = formatPoints(calculation.contributions?.condo);
+  overviewPointsElements.cost.textContent = formatPoints(calculation.contributions?.cost);
   overviewPointsElements.size.textContent = formatPoints(calculation.contributions?.size);
   overviewPointsElements.location.textContent = formatPoints(calculation.contributions?.location);
   overviewPointsElements.furniture.textContent = formatPoints(calculation.contributions?.furniture);
@@ -658,7 +657,7 @@ function resetForm() {
   cancelEditButton.hidden = true;
   saveButton.querySelector("span").textContent = "Salvar imóvel";
   form.reset();
-  form.elements.location.value = "2";
+  form.elements.location.value = "0";
   form.elements.furniture.value = "0";
   form.elements.garage.value = "0";
   descriptionCount.textContent = "0";
@@ -766,7 +765,7 @@ function sanitizeBackupProperty(item, index) {
     condoValue: Number(item.condoValue),
     propertySize: Number(item.propertySize),
     waterIncluded: Boolean(item.waterIncluded),
-    location: Number(item.location),
+    location: normalizeLocationScore(item.location),
     furniture: Number(item.furniture),
     garage: Number(item.garage),
     website: String(item.website || item.link || "").trim().slice(0, 500),
@@ -777,7 +776,7 @@ function sanitizeBackupProperty(item, index) {
 
   const validationMessage = validateData(data);
   if (validationMessage) throw new Error(`Imóvel ${index + 1}: ${validationMessage}`);
-  if (![0, 25, 50, 75, 100].includes(data.location)) {
+  if (![50, 100].includes(data.location)) {
     throw new Error(`Imóvel ${index + 1}: localização inválida.`);
   }
   if (![0, 25, 50, 100].includes(data.furniture)) {
@@ -967,7 +966,7 @@ function normalizeToolData(input) {
     condoValue: Number(input.valor_condominio),
     propertySize: Number(input.tamanho_m2),
     waterIncluded: Boolean(input.agua_inclusa),
-    location: Number(input.localizacao),
+    location: normalizeLocationScore(input.localizacao),
     furniture: Number(input.mobilia),
     garage: Number(input.garagem),
     website: String(input.link_web || "").trim().slice(0, 500),
@@ -1002,7 +1001,7 @@ function registerWebMcpTools() {
         valor_condominio: { type: "number", minimum: 0 },
         tamanho_m2: { type: "number", exclusiveMinimum: 0 },
         agua_inclusa: { type: "boolean" },
-        localizacao: { type: "number", enum: [0, 25, 50, 75, 100] },
+        localizacao: { type: "number", enum: [50, 100] },
         mobilia: { type: "number", enum: [0, 25, 50, 100] },
         garagem: { type: "number", enum: [0, 100, 200] },
         link_web: {
@@ -1033,7 +1032,7 @@ function registerWebMcpTools() {
       const data = normalizeToolData(input);
       const validationMessage = validateData(data);
       if (validationMessage) throw new Error(validationMessage);
-      if (![0, 25, 50, 75, 100].includes(data.location)) throw new Error("Localização inválida.");
+      if (![50, 100].includes(data.location)) throw new Error("Localização inválida.");
       if (![0, 25, 50, 100].includes(data.furniture)) throw new Error("Mobília inválida.");
       if (![0, 100, 200].includes(data.garage)) throw new Error("Garagem inválida.");
 
